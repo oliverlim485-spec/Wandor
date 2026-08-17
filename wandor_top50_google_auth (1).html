@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wandor — Where will you go next?</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Geist', 'sans-serif'],
+            display: ['Special Elite', 'serif'],
+          },
+          colors: {
+            wandor: {
+              dark: '#09090b',
+              card: '#121214',
+              accent: '#f59e0b',
+              muted: '#9ca3af',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & Babel CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Geist', sans-serif;
+      overflow-x: hidden;
+      background-color: #09090b;
+      color: #f4f4f5;
+    }
+    .apple-glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+    .apple-glass-dark {
+      background: rgba(18, 18, 20, 0.88);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .apple-glass-gold {
+      background: rgba(245, 158, 11, 0.12);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.2);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.25);
+      border-radius: 99px;
+    }
+  </style>
+</head>
+<body class="h-full antialiased selection:bg-amber-400 selection:text-black">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- SVG ICONS ---
+    const CompassIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-11l4-2-2 4-4 2 2-4z" />
+      </svg>
+    );
+
+    const MapPinIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    );
+
+    const CalendarIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    );
+
+    const UploadIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+      </svg>
+    );
+
+    const StarIcon = ({ className = "w-4 h-4 text-amber-400 fill-amber-400" }) => (
+      <svg className={className} viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    );
+
+    const WalletIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    );
+
+    const BookmarkIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+      </svg>
+    );
+
+    const MenuIcon = ({ className = "w-6 h-6" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    );
+
+    const XIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    );
+
+    const ChevronRightIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+      </svg>
+    );
+
+    const ChevronLeftIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    );
+
+    const SparklesIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+      </svg>
+    );
+
+    const UserIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    );
+
+    const LockIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+    );
+
+    const TrashIcon = ({ className = "w-4 h-4" }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+    );
+
+    // --- DATA COLLECTIONS ---
+    const POPULAR_DESTINATIONS = [
+      {
+        id: 'japan',
+        name: 'Japan',
+        tagline: 'Ancient streets & modern vibrant cities',
+        flag: '🇯🇵',
+        img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=1200&auto=format&fit=crop',
+        tags: ['Food', 'Culture', 'Temples'],
+        prompt: "7 days in Japan exploring Tokyo ramen, Kyoto temples, and bamboo groves."
+      },
+      {
+        id: 'korea',
+        name: 'South Korea',
+        tagline: 'K-culture, street food & mountain vistas',
+        flag: '🇰🇷',
+        img: 'https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1200&auto=format&fit=crop',
+        tags: ['Nightlife', 'Barbecue', 'Shopping'],
+        prompt: "6 days in Seoul and Jeju Island covering street markets and coastlines."
+      },
+      {
+        id: 'italy',
+        name: 'Italy',
+        tagline: 'Historical landmarks, coastal cliffs & pasta',
+        flag: '🇮🇹',
+        img: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=1200&auto=format&fit=crop',
+        tags: ['Coastal', 'Wine', 'History'],
+        prompt: "8 days exploring Rome, Florence and the Amalfi Coast."
+      },
+      {
+        id: 'france',
+        name: 'France',
+        tagline: 'Art, bakeries & romantic countryside',
+        flag: '🇫🇷',
+        img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1200&auto=format&fit=crop',
+        tags: ['Bakeries', 'Museums', 'Wine'],
+        prompt: "5 days in Paris enjoying bakeries, art museums, and hidden cafes."
+      },
+      {
+        id: 'usa',
+        name: 'USA',
+        tagline: 'National parks, iconic highways & skyline views',
+        flag: '🇺🇸',
+        img: 'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?q=80&w=1200&auto=format&fit=crop',
+        tags: ['Roadtrips', 'Hiking', 'Cuisine'],
+        prompt: "10-day roadtrip in Nevada and California with hikes and steak houses."
+      },
+      {
+        id: 'australia',
+        name: 'Australia',
+        tagline: 'Sun-drenched beaches & native wildlife',
+        flag: '🇦🇺',
+        img: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?q=80&w=1200&auto=format&fit=crop',
+        tags: ['Beaches', 'Surfing', 'Wildlife'],
+        prompt: "7 days in Sydney and Melbourne enjoying coastal walks and coffee culture."
+      }
+    ];
+
+    const WHY_WANDOR_FEATURES = [
+      {
+        icon: SparklesIcon,
+        title: "AI-Powered Planning",
+        desc: "Personalized itineraries built dynamically around your interests, travel pace, and dates."
+      },
+      {
+        icon: WalletIcon,
+        title: "Realistic Budgets",
+        desc: "Estimate accommodation, food, activities, and transport expenses before you spend a penny."
+      },
+      {
+        icon: CalendarIcon,
+        title: "Day-by-Day Routes",
+        desc: "Know exactly what to do each day with realistic timing and reduced travel bottlenecks."
+      },
+      {
+        icon: CompassIcon,
+        title: "Built Around You",
+        desc: "Your trip, your pace. Choose between iconic classic landmarks or quiet hidden gems."
+      }
+    ];
+
+    const SAMPLE_ITINERARY_DAYS = [
+      {
+        day: 1,
+        title: "Arrival & Tokyo Neon Lights",
+        city: "Tokyo 🇯🇵",
+        timeline: [
+          { time: "09:00 AM", name: "Tsukiji Outer Market", desc: "Fresh sushi breakfast and street food stalls.", price: "$30" },
+          { time: "11:30 AM", name: "Shibuya Crossing & Sky", desc: "Panoramic glass view high above the iconic intersection.", price: "$22" },
+          { time: "02:00 PM", name: "Harajuku Takeshita Street", desc: "Stroll through vibrant fashion alleys and soufflé pancake cafes.", price: "Free" },
+          { time: "05:30 PM", name: "Meiji Shrine Forest Walk", desc: "Quiet wooded path leading to the historic wooden torii gate.", price: "Free" },
+          { time: "07:30 PM", name: "Izakaya Dinner in Omoide Yokocho", desc: "Charcoal yakitori skewers in memory lane.", price: "$45" }
+        ]
+      },
+      {
+        day: 2,
+        title: "Traditional Asakusa & Digital Art",
+        city: "Tokyo 🇯🇵",
+        timeline: [
+          { time: "09:30 AM", name: "Senso-ji Temple & Nakamise", desc: "Morning lantern courtyard walk before crowds gather.", price: "Free" },
+          { time: "12:00 PM", name: "Yanaka Old Town Tea House", desc: "Hidden matcha tasting inside a 100-year-old wooden house.", price: "$18" },
+          { time: "03:00 PM", name: "TeamLab Planets Toyosu", desc: "Walk through barefoot water installations and digital gardens.", price: "$28" },
+          { time: "07:00 PM", name: "Ginza Master Omakase Sushi", desc: "Chef's selection of fresh local catches.", price: "$110" }
+        ]
+      },
+      {
+        day: 3,
+        title: "Bullet Train to Ancient Kyoto",
+        city: "Kyoto 🇯🇵",
+        timeline: [
+          { time: "08:30 AM", name: "Shinkansen Bullet Train Journey", desc: "Express rail travel past Mount Fuji views.", price: "$95" },
+          { time: "11:30 AM", name: "Fushimi Inari Torii Gate Trail", desc: "Ascend the mountain path through thousands of vermilion gates.", price: "Free" },
+          { time: "03:00 PM", name: "Gion Historic District Stroll", desc: "Historic wooden machiya townhouses along Shirakawa canal.", price: "Free" },
+          { time: "07:00 PM", name: "Riverside Kaiseki Banquet", desc: "Multi-course seasonal Kyoto cuisine.", price: "$85" }
+        ]
+      }
+    ];
+
+    const SAMPLE_HOTELS = [
+      {
+        type: 'Best Value',
+        badgeColor: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+        name: 'Trunk Hotel Cat Street',
+        location: 'Shibuya, Tokyo • 5 min walk from station',
+        rating: '4.7',
+        price: '$160',
+        img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop'
+      },
+      {
+        type: 'Luxury Stay',
+        badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+        name: 'Hoshinoya Kyoto River Villa',
+        location: 'Arashiyama, Kyoto • Riverfront access',
+        rating: '4.9',
+        price: '$420',
+        img: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=800&auto=format&fit=crop'
+      },
+      {
+        type: 'Charming Budget',
+        badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+        name: 'Gion Heritage Townhouse',
+        location: 'Gion, Kyoto • Historic lane',
+        rating: '4.6',
+        price: '$75',
+        img: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=800&auto=format&fit=crop'
+      }
+    ];
+
+    const USER_REVIEWS = [
+      {
+        id: 1,
+        name: "Elena Rostova",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+        destination: "Tokyo & Kyoto",
+        comment: "Wandor mapped out a route across Tokyo and Kyoto that avoided every tour bus bottleneck! The recommended tea house in Yanaka was the peak highlight of our trip.",
+        rating: 5
+      },
+      {
+        id: 2,
+        name: "Marcus Vance",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop",
+        destination: "Nevada Roadtrip",
+        comment: "I typed '7 day trip to Nevada and Tahoe with steak house dining'. It immediately loaded real hotel rates, cost breakdowns, and scenic routes without fluff.",
+        rating: 5
+      },
+      {
+        id: 3,
+        name: "Sophie Laurent",
+        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=200&auto=format&fit=crop",
+        destination: "Amalfi Coast",
+        comment: "The daily breakdown saved our holiday. We spent days in secluded lemon groves and quiet cliffside trattorias while other tourists were stuck in crowds.",
+        rating: 5
+      }
+    ];
+
+    const DESTINATION_BACKGROUNDS = [
+      { keywords: ['australia', 'sydney', 'melbourne', 'queensland', 'outback', 'bondi', 'brisbane', 'cairns', 'perth'], img: 'https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?q=80&w=1920&auto=format&fit=crop', name: 'Australia 🇦🇺' },
+      { keywords: ['japan', 'tokyo', 'kyoto', 'osaka', 'mount fuji', 'fuji', 'ramen'], img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=1920&auto=format&fit=crop', name: 'Japan 🇯🇵' },
+      { keywords: ['korea', 'seoul', 'jeju', 'busan'], img: 'https://images.unsplash.com/photo-1538485399081-7191377e8241?q=80&w=1920&auto=format&fit=crop', name: 'South Korea 🇰🇷' },
+      { keywords: ['italy', 'rome', 'florence', 'amalfi', 'venice', 'milan', 'positano'], img: 'https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=1920&auto=format&fit=crop', name: 'Italy 🇮🇹' },
+      { keywords: ['france', 'paris', 'nice', 'lyon', 'marseille'], img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1920&auto=format&fit=crop', name: 'France 🇫🇷' },
+      { keywords: ['usa', 'america', 'nevada', 'california', 'new york', 'tahoe', 'miami', 'hawaii', 'los angeles', 'las vegas'], img: 'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?q=80&w=1920&auto=format&fit=crop', name: 'USA 🇺🇸' },
+      { keywords: ['greece', 'santorini', 'athens', 'mykonos'], img: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?q=80&w=1920&auto=format&fit=crop', name: 'Greece 🇬🇷' },
+      { keywords: ['switzerland', 'alps', 'zurich', 'interlaken', 'geneva'], img: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?q=80&w=1920&auto=format&fit=crop', name: 'Switzerland 🇨🇭' },
+      { keywords: ['thailand', 'bangkok', 'phuket', 'chiang mai'], img: 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?q=80&w=1920&auto=format&fit=crop', name: 'Thailand 🇹🇭' },
+      { keywords: ['iceland', 'reykjavik'], img: 'https://images.unsplash.com/photo-1504893524553-b855bce32c67?q=80&w=1920&auto=format&fit=crop', name: 'Iceland 🇮🇸' },
+      { keywords: ['spain', 'barcelona', 'madrid', 'seville'], img: 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?q=80&w=1920&auto=format&fit=crop', name: 'Spain 🇪🇸' },
+      { keywords: ['uk', 'england', 'london', 'scotland', 'edinburgh'], img: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=1920&auto=format&fit=crop', name: 'United Kingdom 🇬🇧' },
+      { keywords: ['egypt', 'cairo', 'pyramids'], img: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1920&auto=format&fit=crop', name: 'Egypt 🇪🇬' },
+      { keywords: ['indonesia', 'bali'], img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=1920&auto=format&fit=crop', name: 'Bali, Indonesia 🇮🇩' },
+      { keywords: ['canada', 'vancouver', 'toronto', 'banff'], img: 'https://images.unsplash.com/photo-1503614472-8c93d56e92ce?q=80&w=1920&auto=format&fit=crop', name: 'Canada 🇨🇦' },
+      { keywords: ['brazil', 'rio', 'sao paulo'], img: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?q=80&w=1920&auto=format&fit=crop', name: 'Brazil 🇧🇷' }
+    ];
+
+    // Destination-specific content used by the planner. The preview, hotels and food all switch together.
+    // Top 50 destination library. Based on the 2026 Peak Lists ranking of most visited countries.
+    // Each entry gives Wandor real destination-specific cities, sights, foods and stay ideas.
+    const TOP_50_DESTINATIONS = {
+      france:{name:'France 🇫🇷',city:'Paris',places:['Eiffel Tower','Louvre Museum','Montmartre','Seine River','Versailles'],foods:['Le Comptoir du Relais','Bouillon Pigalle','Breizh Café','L’As du Fallafel','Septime'],hotels:['Hôtel Malte','Novotel Paris Centre Tour Eiffel','Pullman Paris Tour Eiffel','Hôtel des Académies et des Arts','Le Bristol Paris']},
+      spain:{name:'Spain 🇪🇸',city:'Barcelona',places:['Sagrada Família','Park Güell','Gothic Quarter','La Boqueria','Barceloneta Beach'],foods:['Tickets','Can Culleretes','Bar Cañete','Cervecería Catalana','Disfrutar'],hotels:['Hotel Jazz Barcelona','H10 Madison','Catalonia Ramblas','NH Collection Barcelona Gran Hotel Calderón','Majestic Hotel & Spa Barcelona']},
+      'united states':{name:'United States 🇺🇸',city:'New York City',places:['Times Square','Central Park','Statue of Liberty','Brooklyn Bridge','The Metropolitan Museum of Art'],foods:['Katz’s Delicatessen','Joe’s Pizza','Los Tacos No. 1','Peter Luger','Ippudo'],hotels:['Pod 51','Arlo Midtown','LUMA Hotel Times Square','The Langham New York','The Plaza New York']},
+      china:{name:'China 🇨🇳',city:'Beijing',places:['Great Wall of China','Forbidden City','Temple of Heaven','Summer Palace','Wangfujing'],foods:['Da Dong','Din Tai Fung','Quanjude','Jiumaojiu','Siji Minfu'],hotels:['Novotel Beijing Peace','The Orchid Hotel Beijing','Hilton Beijing Wangfujing','The Peninsula Beijing','Mandarin Oriental Wangfujing']},
+      italy:{name:'Italy 🇮🇹',city:'Rome',places:['Colosseum','Trevi Fountain','Pantheon','Roman Forum','Trastevere'],foods:['Roscioli Salumeria con Cucina','Da Enzo al 29','Armando al Pantheon','Pizzarium Bonci','Osteria da Fortunata'],hotels:['Hotel Artemide','The Hive Hotel','Hotel Quirinale','NH Collection Roma Fori Imperiali','Hotel Hassler Roma']},
+      turkey:{name:'Turkey 🇹🇷',city:'Istanbul',places:['Hagia Sophia','Blue Mosque','Grand Bazaar','Topkapı Palace','Bosphorus Cruise'],foods:['Çiya Sofrası','Karaköy Lokantası','Hamdi Restaurant','Balkan Lokantası','Mikla'],hotels:['Hotel Amira Istanbul','The Wings Hotel Istanbul','Mest Hotel Istanbul','CVK Park Bosphorus Hotel','Four Seasons Hotel Istanbul at Sultanahmet']},
+      mexico:{name:'Mexico 🇲🇽',city:'Mexico City',places:['Zócalo','Frida Kahlo Museum','Chapultepec Castle','Teotihuacan','Roma Norte'],foods:['Contramar','El Cardenal','Taquería Los Cocuyos','Pujol','Panadería Rosetta'],hotels:['Hotel Zócalo Central','Casa Decu','NH Collection Mexico City Reforma','Andaz Mexico City Condesa','Four Seasons Mexico City']},
+      thailand:{name:'Thailand 🇹🇭',city:'Bangkok',places:['Grand Palace','Wat Arun','Chatuchak Market','Wat Pho','Chao Phraya River'],foods:['Thip Samai','Jay Fai','Somtum Der','Jai Fai','Krua Apsorn'],hotels:['ibis Bangkok Riverside','Adelphi Forty-Nine','Amara Bangkok','Eastin Grand Hotel Sathorn','The Siam Bangkok']},
+      germany:{name:'Germany 🇩🇪',city:'Berlin',places:['Brandenburg Gate','Reichstag','Museum Island','East Side Gallery','Checkpoint Charlie'],foods:['Curry 36','Mustafa’s Gemüse Kebap','Zur Letzten Instanz','Tim Raue','Markthalle Neun'],hotels:['Motel One Berlin-Hauptbahnhof','Hotel Zoe by Amano','NH Collection Berlin Mitte','The Westin Grand Berlin','Hotel Adlon Kempinski']},
+      uk:{name:'United Kingdom 🇬🇧',city:'London',places:['Big Ben','Tower Bridge','British Museum','Buckingham Palace','Borough Market'],foods:['Dishoom','Flat Iron','Borough Market','Rules','St. JOHN'],hotels:['Premier Inn London County Hall','The Resident Covent Garden','citizenM Tower of London','The Savoy','The Langham London']},
+      austria:{name:'Austria 🇦🇹',city:'Vienna',places:['Schönbrunn Palace','St. Stephen’s Cathedral','Belvedere Palace','Hofburg','Vienna State Opera'],foods:['Figlmüller','Plachutta','Café Central','Naschmarkt','Steirereck'],hotels:['Motel One Wien-Staatsoper','Hotel Josefshof am Rathaus','Austria Trend Hotel Europa Wien','The Guesthouse Vienna','Hotel Sacher Wien']},
+      greece:{name:'Greece 🇬🇷',city:'Athens',places:['Acropolis','Parthenon','Plaka','Ancient Agora','Mount Lycabettus'],foods:['O Thanasis','Ta Karamanlidika Tou Fani','Kostas','Diporto','Strofi'],hotels:['Attalos Hotel','A for Athens','Electra Metropolis Athens','Coco-Mat Athens BC','Hotel Grande Bretagne']},
+      japan:{name:'Japan 🇯🇵',city:'Tokyo',places:['Senso-ji','Shibuya Crossing','Meiji Shrine','teamLab Planets','Tsukiji Outer Market'],foods:['Ramen Break Beats','Tsukiji Sushi Sei','Ginza Hachigou','Tsujihan','Afuri Ramen'],hotels:['Shibuya Excel Hotel Tokyu','Asakusa Tobu Hotel','Hotel Gracery Shinjuku','Mitsui Garden Hotel Ginza Premier','Park Hyatt Tokyo']},
+      canada:{name:'Canada 🇨🇦',city:'Toronto',places:['CN Tower','Royal Ontario Museum','St. Lawrence Market','Toronto Islands','Casa Loma'],foods:['Richmond Station','Pai','St. Lawrence Market','Bar Isabel','Alo'],hotels:['Chelsea Hotel Toronto','The Anndore House','One King West Hotel','The Omni King Edward Hotel','The Hazelton Hotel']},
+      netherlands:{name:'Netherlands 🇳🇱',city:'Amsterdam',places:['Rijksmuseum','Van Gogh Museum','Anne Frank House','Jordaan','Vondelpark'],foods:['Foodhallen','The Pantry','Moeders','De Kas','FEBO'],hotels:['Hotel Estheréa','The Hoxton Amsterdam','Park Plaza Victoria Amsterdam','Hotel De L’Europe','Waldorf Astoria Amsterdam']},
+      portugal:{name:'Portugal 🇵🇹',city:'Lisbon',places:['Belém Tower','Jerónimos Monastery','Alfama','São Jorge Castle','Praça do Comércio'],foods:['Time Out Market Lisboa','Cervejaria Ramiro','Pasteis de Belem','O Velho Eurico','Belcanto'],hotels:['Hotel da Baixa','HF Fénix Music','Lisboa Pessoa Hotel','Memmo Alfama','Four Seasons Hotel Ritz Lisbon']},
+      malaysia:{name:'Malaysia 🇲🇾',city:'Kuala Lumpur',places:['Petronas Twin Towers','Batu Caves','Bukit Bintang','Central Market','Merdeka Square'],foods:['Village Park Restaurant','Jalan Alor','Lot 10 Hutong','Bijan','Nasi Kandar Pelita'],hotels:['Hotel Stripes Kuala Lumpur','Aloft Kuala Lumpur Sentral','EQ Kuala Lumpur','Traders Hotel Kuala Lumpur','Mandarin Oriental Kuala Lumpur']},
+      russia:{name:'Russia 🇷🇺',city:'Moscow',places:['Red Square','Kremlin','Saint Basil’s Cathedral','Tretyakov Gallery','GUM'],foods:['Café Pushkin','Grabli','Mari Vanna','Dr. Zhivago','Yolki-Palki'],hotels:['Moscow Marriott Grand Hotel','Azimut City Hotel Olympic','Metropol Moscow','Ararat Park Hyatt Moscow','The St. Regis Moscow Nikolskaya']},
+      'south korea':{name:'South Korea 🇰🇷',city:'Seoul',places:['Gyeongbokgung Palace','Myeongdong','Bukchon Hanok Village','N Seoul Tower','Hongdae'],foods:['Gwangjang Market','Jinokhwa Halmae Wonjo Dakhanmari','Mapo Jeong Daepo','Myeongdong Kyoja','Jungsik'],hotels:['Nine Tree Premier Hotel Insadong','L7 Hongdae','RYSE Autograph Collection','The Shilla Seoul','Four Seasons Hotel Seoul']},
+      india:{name:'India 🇮🇳',city:'Delhi',places:['India Gate','Red Fort','Humayun’s Tomb','Qutub Minar','Chandni Chowk'],foods:['Indian Accent','Karim’s','Paranthe Wali Gali','Bukhara','SodaBottleOpenerWala'],hotels:['Bloomrooms @ Janpath','The Metropolitan Hotel & Spa','The Imperial New Delhi','The Oberoi New Delhi','Taj Palace New Delhi']},
+      indonesia:{name:'Indonesia 🇮🇩',city:'Bali',places:['Uluwatu Temple','Tegallalang Rice Terrace','Ubud Monkey Forest','Seminyak Beach','Tanah Lot'],foods:['Locavore NXT','Warung Babi Guling Pak Malen','Murni’s Warung','Naughty Nuri’s','Ibu Oka'],hotels:['The Haven Bali Seminyak','Alaya Resort Ubud','The Westin Resort Nusa Dua','Padma Resort Legian','Four Seasons Resort Bali at Sayan']},
+      egypt:{name:'Egypt 🇪🇬',city:'Cairo',places:['Giza Pyramids','Sphinx','Egyptian Museum','Khan el-Khalili','Citadel of Cairo'],foods:['Abou Tarek','Felfela','Koshary El Tahrir','Zooba','Sequoia'],hotels:['Steigenberger Hotel El Tahrir','Le Meridien Cairo Airport','Kempinski Nile Hotel','Four Seasons Cairo at Nile Plaza','Marriott Mena House Cairo']},
+      'saudi arabia':{name:'Saudi Arabia 🇸🇦',city:'Riyadh',places:['Masmak Fortress','Kingdom Centre','Diriyah','Edge of the World','National Museum of Saudi Arabia'],foods:['Najd Village','Mama Noura','Lusin','Takya','Spazio'],hotels:['Braira Qurtubah','Centro Waha','Narcissus The Royal Hotel','Fairmont Riyadh','The Ritz-Carlton Riyadh']},
+      morocco:{name:'Morocco 🇲🇦',city:'Marrakech',places:['Jemaa el-Fnaa','Bahia Palace','Majorelle Garden','Medina','Koutoubia Mosque'],foods:['Nomad','Le Jardin','Dar Yacout','Al Fassia','Cafe Clock'],hotels:['Riad Kniza','Riad Kheirredine','La Mamounia','Royal Mansour Marrakech','Four Seasons Resort Marrakech']},
+      switzerland:{name:'Switzerland 🇨🇭',city:'Zurich',places:['Old Town Zurich','Lake Zurich','Uetliberg','Bahnhofstrasse','Rhine Falls'],foods:['Zeughauskeller','Hiltl','Kronenhalle','Sprungli','Widder Restaurant'],hotels:['Hotel Bristol Zurich','Ruby Mimi Hotel Zurich','Hotel Glockenhof','Baur au Lac','The Dolder Grand']},
+      belgium:{name:'Belgium 🇧🇪',city:'Brussels',places:['Grand Place','Atomium','Manneken Pis','Royal Palace','Galeries Royales Saint-Hubert'],foods:['Chez Leon','Fin de Siècle','Noordzee Mer du Nord','Comme Chez Soi','Maison Antoine'],hotels:['Motel One Brussels','Hotel Indigo Brussels','NH Collection Grand Sablon','The Dominican','Hotel Amigo']},
+      vietnam:{name:'Vietnam 🇻🇳',city:'Ho Chi Minh City',places:['Ben Thanh Market','War Remnants Museum','Notre-Dame Cathedral Basilica of Saigon','Nguyen Hue Walking Street','Cu Chi Tunnels'],foods:['Banh Mi Huynh Hoa','Pho Hoa Pasteur','Pizza 4P’s','Bun Cha 145','Quan Bui'],hotels:['Liberty Central Saigon Citypoint','Silverland Yen Hotel','Fusion Suites Saigon','Hotel Nikko Saigon','Park Hyatt Saigon']},
+      australia:{name:'Australia 🇦🇺',city:'Sydney',places:['Sydney Opera House','The Rocks','Bondi Beach','Blue Mountains','Royal Botanic Garden'],foods:['Bennelong','Opera Bar','Midden by Mark Olive','Quay','Spice Alley'],hotels:['Sydney Harbour Marriott Hotel at Circular Quay','The Fullerton Hotel Sydney','Rydges World Square','Vibe Hotel Sydney','Park Hyatt Sydney']},
+      'united arab emirates':{name:'United Arab Emirates 🇦🇪',city:'Dubai',places:['Burj Khalifa','Dubai Mall','Dubai Marina','Jumeirah Beach','Al Fahidi Historical Neighbourhood'],foods:['Al Fanar Restaurant','Ravi Restaurant','Arabian Tea House','Ossiano','Pierchic'],hotels:['Rove Downtown','Address Sky View','The Dubai EDITION','Atlantis The Palm','Burj Al Arab']},
+      'czech republic':{name:'Czech Republic 🇨🇿',city:'Prague',places:['Prague Castle','Charles Bridge','Old Town Square','Astronomical Clock','St. Vitus Cathedral'],foods:['Lokál Dlouhááá','Café Savoy','Kantýna','Eska','Field'],hotels:['Motel One Prague-Florentinum','Hotel Josef','BoHo Prague Hotel','Augustine Prague','Four Seasons Hotel Prague']},
+      poland:{name:'Poland 🇵🇱',city:'Kraków',places:['Wawel Castle','Main Market Square','St. Mary’s Basilica','Kazimierz','Auschwitz-Birkenau'],foods:['Morskie Oko','Hamsa','Starka Restaurant','Pod Aniołami','Zazie Bistro'],hotels:['PURO Kraków Kazimierz','Hotel Polski Pod Białym Orłem','Metropolitan Boutique Hotel','Hotel Stary','Balthazar Design Hotel']},
+      philippines:{name:'Philippines 🇵🇭',city:'Manila',places:['Intramuros','Rizal Park','Manila Ocean Park','National Museum Complex','Fort Santiago'],foods:['Manam','Jollibee','Toyomansi','Locavore','Barbara’s Heritage Restaurant'],hotels:['The Bayleaf Intramuros','Hotel 101 Manila','Admiral Hotel Manila','Shangri-La The Fort','The Peninsula Manila']},
+      'south africa':{name:'South Africa 🇿🇦',city:'Cape Town',places:['Table Mountain','V&A Waterfront','Robben Island','Bo-Kaap','Cape Point'],foods:['The Test Kitchen','Gold Restaurant','Mzansi Restaurant','Kloof Street House','Codfather Seafood & Sushi'],hotels:['Hotel Sky Cape Town','Cape Heritage Hotel','The Silo Hotel','The Twelve Apostles Hotel','One&Only Cape Town']},
+      brazil:{name:'Brazil 🇧🇷',city:'Rio de Janeiro',places:['Christ the Redeemer','Sugarloaf Mountain','Copacabana Beach','Ipanema Beach','Santa Teresa'],foods:['Aprazível','Bar do Mineiro','Confeitaria Colombo','Fogo de Chão','Casa da Feijoada'],hotels:['Ibis Copacabana Posto 5','Windsor California Copacabana','Miramar by Windsor','Emiliano Rio','Copacabana Palace']},
+      argentina:{name:'Argentina 🇦🇷',city:'Buenos Aires',places:['La Boca','Recoleta Cemetery','Plaza de Mayo','Palermo','Teatro Colón'],foods:['Don Julio','La Cabrera','El Preferido de Palermo','Café Tortoni','Gran Dabbang'],hotels:['NH Collection Buenos Aires Centro Histórico','Palo Santo Hotel','Alvear Palace Hotel','Four Seasons Buenos Aires','Faena Hotel Buenos Aires']},
+      hungary:{name:'Hungary 🇭🇺',city:'Budapest',places:['Buda Castle','Parliament Building','Fisherman’s Bastion','Széchenyi Thermal Bath','Chain Bridge'],foods:['Rosenstein Vendéglő','Menza','Gettó Gulyás','Central Market Hall','Stand25'],hotels:['Bohem Art Hotel','Hotel Rum Budapest','Kempinski Hotel Corvinus','Aria Hotel Budapest','Four Seasons Gresham Palace']},
+      singapore:{name:'Singapore 🇸🇬',city:'Singapore',places:['Gardens by the Bay','Marina Bay Sands','Sentosa','Chinatown','Singapore Botanic Gardens'],foods:['Maxwell Food Centre','Lau Pa Sat','Burnt Ends','Jumbo Seafood','Candlenut'],hotels:['Hotel Boss','Carlton Hotel Singapore','PARKROYAL COLLECTION Marina Bay','The Fullerton Hotel Singapore','Marina Bay Sands']},
+      croatia:{name:'Croatia 🇭🇷',city:'Dubrovnik',places:['Dubrovnik Old Town','City Walls','Stradun','Lokrum Island','Mount Srđ'],foods:['Proto','Taj Mahal Dubrovnik','Nautika','Pantarul','Bistro Tavulin'],hotels:['Hotel Lero','Valamar Lacroma Dubrovnik','Hotel Excelsior Dubrovnik','Rixos Premium Dubrovnik','Villa Dubrovnik']},
+      ireland:{name:'Ireland 🇮🇪',city:'Dublin',places:['Trinity College','Guinness Storehouse','Dublin Castle','Temple Bar','St Stephen’s Green'],foods:['The Winding Stair','Chapter One','Leo Burdock','Bunsen','The Woollen Mills'],hotels:['Maldron Hotel Smithfield','The Alex Hotel','The Dean Dublin','The Shelbourne','The Merrion Hotel']},
+      romania:{name:'Romania 🇷🇴',city:'Bucharest',places:['Palace of Parliament','Old Town','Romanian Athenaeum','Village Museum','Herăstrău Park'],foods:['Caru’ cu Bere','Hanu’ lui Manuc','Lacrimi și Sfinți','Kane','Simbio'],hotels:['Europa Royale Bucharest','Moxy Bucharest Old Town','Novotel Bucharest City Centre','InterContinental Athénée Palace','The Marmorosch Bucharest']},
+      tunisia:{name:'Tunisia 🇹🇳',city:'Tunis',places:['Medina of Tunis','Carthage','Sidi Bou Said','Bardo Museum','Avenue Habib Bourguiba'],foods:['Dar Zarrouk','Dar Slah','Fondouk El Attarine','Le Golfe','Chez Slah'],hotels:['Dar El Jeld Hotel & Spa','Laico Tunis','Novotel Tunis','Royal Victoria','Four Seasons Hotel Tunis']},
+      chile:{name:'Chile 🇨🇱',city:'Santiago',places:['Cerro San Cristóbal','Plaza de Armas','La Chascona','Sky Costanera','Bellavista'],foods:['Boragó','Liguria','Como Agua Para Chocolate','Fuente Alemana','Peumayén'],hotels:['Hotel Cumbres Lastarria','The Singular Santiago','W Santiago','Hotel Magnolia','Mandarin Oriental Santiago']},
+      peru:{name:'Peru 🇵🇪',city:'Lima',places:['Miraflores','Barranco','Huaca Pucllana','Plaza de Armas','Larco Museum'],foods:['Central','Maido','La Mar','Isolina','Panchita'],hotels:['Ibis Lima Larco Miraflores','Casa Andina Premium Miraflores','Hilton Lima Miraflores','JW Marriott Hotel Lima','Belmond Miraflores Park']},
+      colombia:{name:'Colombia 🇨🇴',city:'Bogotá',places:['La Candelaria','Gold Museum','Monserrate','Plaza de Bolívar','Salt Cathedral of Zipaquirá'],foods:['Leo','Andrés Carne de Res','La Puerta Falsa','Mini-Mal','El Chato'],hotels:['Hotel B3 Virrey','GHL Collection 93','Four Points by Sheraton Bogotá','Sofitel Bogotá Victoria Regia','Four Seasons Hotel Casa Medina Bogotá']},
+      finland:{name:'Finland 🇫🇮',city:'Helsinki',places:['Helsinki Cathedral','Suomenlinna','Market Square','Temppeliaukio Church','Oodi Library'],foods:['Savotta','Löyly','Restaurant Nokka','Story','Yes Yes Yes'],hotels:['Hotel Helka','Scandic Grand Central Helsinki','Hotel F6','Hotel Kämp','Lapland Hotels Bulevardi']},
+      norway:{name:'Norway 🇳🇴',city:'Oslo',places:['Vigeland Park','Opera House','Akershus Fortress','Munch Museum','Bygdøy'],foods:['Mathallen Oslo','Lofoten Fiskerestaurant','Maaemo','Kaffistova','Fiskeriet Youngstorget'],hotels:['Citybox Oslo','Thon Hotel Opera','Clarion Hotel The Hub','Amerikalinjen','The Thief']},
+      denmark:{name:'Denmark 🇩🇰',city:'Copenhagen',places:['Nyhavn','Tivoli Gardens','Rosenborg Castle','Christiansborg Palace','The Little Mermaid'],foods:['Torvehallerne','Geranium','Gasoline Grill','Restaurant Schønnemann','Kødbyens Fiskebar'],hotels:['Wakeup Copenhagen','Hotel Kong Arthur','Hotel SP34','Hotel Sanders','d’Angleterre']},
+      'new zealand':{name:'New Zealand 🇳🇿',city:'Auckland',places:['Sky Tower','Viaduct Harbour','Waiheke Island','Auckland War Memorial Museum','Piha Beach'],foods:['Depot','Federal Delicatessen','Amano','Cassia','Coco’s Cantina'],hotels:['Cordis Auckland','M Social Auckland','The Grand by SkyCity','Park Hyatt Auckland','Sofitel Auckland Viaduct Harbour']},
+      qatar:{name:'Qatar 🇶🇦',city:'Doha',places:['Souq Waqif','Museum of Islamic Art','Katara Cultural Village','The Pearl-Qatar','National Museum of Qatar'],foods:['Parisa Persian Restaurant','SMAT','IDAM','Bayt El Talleh','Al Terrace'],hotels:['Premier Inn Doha Airport','Souq Waqif Boutique Hotels','W Doha','Mandarin Oriental Doha','The St. Regis Doha']},
+      ukraine:{name:'Ukraine 🇺🇦',city:'Kyiv',places:['St. Sophia’s Cathedral','Kyiv Pechersk Lavra','Maidan Nezalezhnosti','Andriyivskyi Descent','Golden Gate'],foods:['Kanapa','Puzata Hata','Ostannya Barykada','VarenykyNow','Musafir'],hotels:['ibis Kyiv City Center','11 Mirrors Design Hotel','InterContinental Kyiv','Hilton Kyiv','Fairmont Grand Hotel Kyiv']}
+    };
+
+    const TOP_50_ALIASES = {
+      'united states of america':'united states','usa':'united states','us':'united states',
+      'u.s.':'united states','u.s.a.':'united states','uk':'uk','united kingdom':'uk','great britain':'uk',
+      'england':'uk','korea':'south korea','republic of korea':'south korea','uae':'united arab emirates',
+      'czechia':'czech republic','the netherlands':'netherlands','the philippines':'philippines',
+      'vietnam':'vietnam','turkiye':'turkey','türkiye':'turkey','russia':'russia','brazil':'brazil'
+    };
+
+    const DESTINATION_PROFILES = {
+      australia: {
+        match: ['australia','sydney','melbourne','brisbane','gold coast','cairns','perth','bondi','great barrier reef'],
+        name: 'Australia 🇦🇺',
+        days: [
+          {day:1,title:'Sydney Harbour & The Rocks',city:'Sydney 🇦🇺',timeline:[
+            {time:'09:00 AM',name:'Sydney Opera House',desc:'Walk around the harbour and see the Opera House up close.',price:'Free'},
+            {time:'11:30 AM',name:'The Rocks',desc:'Explore the historic lanes, markets and harbour views.',price:'Free'},
+            {time:'02:00 PM',name:'Royal Botanic Garden',desc:'Easy waterfront walk with views back towards the city.',price:'Free'},
+            {time:'05:30 PM',name:'Circular Quay Sunset',desc:'Watch the harbour light up as the sun goes down.',price:'Free'},
+            {time:'07:30 PM',name:'Australian Pub Dinner',desc:'Try a local favourite such as chicken parmigiana or a classic steak.',price:'$25–45'}]},
+          {day:2,title:'Bondi Beach & Coastal Walk',city:'Sydney 🇦🇺',timeline:[
+            {time:'09:00 AM',name:'Bondi Beach',desc:'Start the day by the ocean and grab breakfast nearby.',price:'Free'},
+            {time:'10:30 AM',name:'Bondi to Coogee Walk',desc:'Follow the coastal path past beaches, cliffs and viewpoints.',price:'Free'},
+            {time:'02:00 PM',name:'Coogee Beach',desc:'Take a break by the water and explore the surrounding cafes.',price:'Free'},
+            {time:'05:00 PM',name:'Paddington',desc:'Browse local shops and the streets around Oxford Street.',price:'Free'},
+            {time:'07:30 PM',name:'Darling Harbour',desc:'Finish the day with dinner and waterfront views.',price:'$25–50'}]},
+          {day:3,title:'Blue Mountains Escape',city:'Blue Mountains 🇦🇺',timeline:[
+            {time:'08:00 AM',name:'Train to Katoomba',desc:'Head out of Sydney for a day among the mountains.',price:'$10–20'},
+            {time:'10:30 AM',name:'Echo Point & Three Sisters',desc:'See one of the Blue Mountains’ best-known viewpoints.',price:'Free'},
+            {time:'12:30 PM',name:'Katoomba Lunch',desc:'Stop for a relaxed lunch in town.',price:'$15–30'},
+            {time:'02:00 PM',name:'Scenic World',desc:'Take in the rainforest and mountain views from the rides and walkways.',price:'$50–60'},
+            {time:'06:30 PM',name:'Return to Sydney',desc:'Head back to the city after a full day out.',price:'Included'}]}
+        ],
+        hotels:[['Sydney Harbour Marriott Hotel at Circular Quay','Circular Quay • Harbour views','8.3','$220'],['The Fullerton Hotel Sydney','Martin Place • Near Circular Quay','8.9','$260'],['Rydges World Square','Sydney CBD • Near World Square','8.3','$150'],['Vibe Hotel Sydney','Sydney CBD • Near Town Hall','8.4','$145'],['Novotel Sydney Central','Haymarket • Near Central Station','8.2','$160'],['Park Hyatt Sydney','The Rocks • Harbour views','9.1','$700']],
+        food:[['Bennelong','Modern Australian dining at the Sydney Opera House','$$$$'],['Opera Bar','Harbour-side dining beside the Sydney Opera House','$$–$$$'],['Midden by Mark Olive','Contemporary Australian cuisine with native ingredients','$$$'],['Quay','Modern Australian fine dining in The Rocks','$$$$'],['Mr. Wong','Cantonese restaurant in Sydney CBD','$$$'],['Spice Alley','Casual Asian food court in Chippendale','$–$$']]
+      },
+      japan: {
+        match:['japan','tokyo','kyoto','osaka','fuji','ramen','sushi'], name:'Japan 🇯🇵',
+        days:[
+          {day:1,title:'Tokyo Classics',city:'Tokyo 🇯🇵',timeline:[{time:'09:00 AM',name:'Asakusa & Senso-ji',desc:'Start with Tokyo’s oldest temple and the streets around Nakamise.',price:'Free'},{time:'12:00 PM',name:'Ueno',desc:'Explore the park and nearby food spots.',price:'Free'},{time:'03:00 PM',name:'Shibuya Crossing',desc:'See one of Tokyo’s busiest intersections and explore the area.',price:'Free'},{time:'06:00 PM',name:'Shibuya Sky',desc:'Take in the city from above at sunset.',price:'$20–25'},{time:'08:00 PM',name:'Ramen Dinner',desc:'Finish the day with a bowl of local ramen.',price:'$8–15'}]},
+          {day:2,title:'Harajuku & Modern Tokyo',city:'Tokyo 🇯🇵',timeline:[{time:'09:30 AM',name:'Meiji Shrine',desc:'Walk through the forested grounds beside Harajuku.',price:'Free'},{time:'11:30 AM',name:'Takeshita Street',desc:'Browse shops and try a Japanese street snack.',price:'$5–15'},{time:'02:00 PM',name:'Omotesando',desc:'Explore the cafes and architecture around the avenue.',price:'Free'},{time:'05:00 PM',name:'teamLab Planets',desc:'Walk through immersive digital art installations.',price:'$25–35'},{time:'08:00 PM',name:'Izakaya Dinner',desc:'Try small plates and grilled dishes in a local izakaya.',price:'$25–45'}]},
+          {day:3,title:'Kyoto Temples',city:'Kyoto 🇯🇵',timeline:[{time:'08:00 AM',name:'Shinkansen to Kyoto',desc:'Take the bullet train from Tokyo to Kyoto.',price:'$80–100'},{time:'11:00 AM',name:'Fushimi Inari',desc:'Walk through the famous rows of red torii gates.',price:'Free'},{time:'02:00 PM',name:'Kiyomizu-dera',desc:'Visit the temple and explore the old streets nearby.',price:'$3–5'},{time:'05:00 PM',name:'Gion',desc:'Wander through Kyoto’s traditional streets.',price:'Free'},{time:'07:30 PM',name:'Kyoto Dinner',desc:'Try seasonal Japanese dishes or a casual noodle shop.',price:'$15–35'}]}
+        ],
+        hotels:[['Shibuya Excel Hotel Tokyu','Shibuya • Above Shibuya Station','8.5','$190'],['Asakusa Tobu Hotel','Asakusa • Near Senso-ji','8.8','$140'],['Hotel Gracery Shinjuku','Shinjuku • Near Kabukicho','8.2','$160'],['Mitsui Garden Hotel Ginza Premier','Ginza • Central location','8.6','$210'],['The Gate Hotel Kyoto Takasegawa by Hulic','Kyoto • Near Gion','9.1','$220'],['Park Hyatt Tokyo','Shinjuku • Luxury stay','9.0','$650']],
+        food:[['Ramen Break Beats','Ramen restaurant in Shibuya','$$'],['Tsukiji Sushi Sei','Sushi near Tsukiji','$$–$$$'],['Ginza Hachigou','Popular ramen spot in Ginza','$$'],['Tsujihan','Seafood bowls in Tokyo','$$'],['Sushiro','Conveyor-belt sushi with locations across Japan','$–$$'],['Afuri Ramen','Yuzu ramen and other noodle dishes','$$']]
+      },
+      uk: { match:['uk','united kingdom','england','london','scotland','edinburgh','manchester','liverpool','wales'], name:'United Kingdom 🇬🇧', days:[
+        {day:1,title:'Central London',city:'London 🇬🇧',timeline:[{time:'09:00 AM',name:'Westminster & Big Ben',desc:'Walk around Westminster and see Big Ben and the Houses of Parliament.',price:'Free'},{time:'11:30 AM',name:'Buckingham Palace',desc:'See the palace and St James’s Park.',price:'Free'},{time:'02:00 PM',name:'Covent Garden',desc:'Browse the market and surrounding streets.',price:'Free'},{time:'05:00 PM',name:'Trafalgar Square',desc:'Explore central London and the National Gallery area.',price:'Free'},{time:'07:30 PM',name:'Soho Dinner',desc:'Try a British pub or restaurant in Soho.',price:'$20–50'}]},
+        {day:2,title:'Museums & South Bank',city:'London 🇬🇧',timeline:[{time:'09:30 AM',name:'British Museum',desc:'Explore collections from around the world.',price:'Free'},{time:'12:30 PM',name:'Borough Market',desc:'Grab lunch from one of London’s best-known food markets.',price:'$15–30'},{time:'02:30 PM',name:'Tower Bridge',desc:'Walk along the Thames and see Tower Bridge.',price:'Free'},{time:'05:00 PM',name:'South Bank',desc:'Walk beside the Thames.',price:'Free'},{time:'07:30 PM',name:'Chinatown',desc:'Dinner around Soho and Chinatown.',price:'$20–50'}]},
+        {day:3,title:'London Neighbourhoods',city:'London 🇬🇧',timeline:[{time:'09:00 AM',name:'Notting Hill',desc:'Explore the colourful streets and Portobello Road.',price:'Free'},{time:'12:00 PM',name:'Hyde Park',desc:'Relax in one of London’s central parks.',price:'Free'},{time:'02:00 PM',name:'Camden Market',desc:'Explore stalls, shops and street food.',price:'$10–25'},{time:'05:00 PM',name:'Regent’s Park',desc:'Take a walk through the park.',price:'Free'},{time:'07:30 PM',name:'Camden Dinner',desc:'Finish the day with food and live music nearby.',price:'$20–45'}]}],
+        hotels:[['The Resident Covent Garden','Covent Garden • Central London','9.1','$260'],['Premier Inn London County Hall','South Bank • Near Westminster','8.7','$150'],['The Hoxton, Shoreditch','Shoreditch • East London','8.6','$220'],['citizenM Tower of London','Tower Hill • Thames views','8.8','$190']],
+        food:[['Dishoom Covent Garden','Indian-inspired dining in Covent Garden','$$–$$$'],['Flat Iron Soho','Popular steak restaurant in Soho','$$'],['Borough Market','Food market with many stalls','$–$$$'],['Rules Restaurant','Historic British restaurant near Covent Garden','$$$'],['Padella','Fresh pasta restaurant in Borough Market','$$']]
+      },
+      italy: {
+        match:['italy','rome','florence','venice','milan','amalfi','positano'], name:'Italy 🇮🇹',
+        days:[
+          {day:1,title:'Rome Classics',city:'Rome 🇮🇹',timeline:[{time:'09:00 AM',name:'Colosseum',desc:'Explore one of Rome’s most famous landmarks.',price:'$20–30'},{time:'11:30 AM',name:'Roman Forum',desc:'Walk through the ruins of ancient Rome.',price:'Included'},{time:'02:00 PM',name:'Trevi Fountain',desc:'See the fountain and wander the surrounding streets.',price:'Free'},{time:'04:30 PM',name:'Pantheon',desc:'Step inside one of the city’s best-preserved ancient buildings.',price:'$5–10'},{time:'07:30 PM',name:'Trattoria Dinner',desc:'Have pasta and a simple Italian dinner in a local restaurant.',price:'$20–40'}]},
+          {day:2,title:'Florence & Renaissance Streets',city:'Florence 🇮🇹',timeline:[{time:'09:00 AM',name:'Duomo',desc:'See Florence’s famous cathedral and surrounding square.',price:'Free–25'},{time:'11:30 AM',name:'Uffizi Gallery',desc:'Spend a few hours with Renaissance masterpieces.',price:'$20–30'},{time:'03:00 PM',name:'Ponte Vecchio',desc:'Walk across Florence’s historic bridge.',price:'Free'},{time:'05:00 PM',name:'Piazzale Michelangelo',desc:'Get a panoramic view of Florence.',price:'Free'},{time:'08:00 PM',name:'Tuscan Dinner',desc:'Try pasta, steak or a local seasonal dish.',price:'$20–45'}]},
+          {day:3,title:'Venice Canals',city:'Venice 🇮🇹',timeline:[{time:'09:00 AM',name:'St Mark’s Square',desc:'Start among Venice’s most famous buildings and canals.',price:'Free'},{time:'11:00 AM',name:'Rialto Market',desc:'Browse fresh produce and local food stalls.',price:'Free'},{time:'02:00 PM',name:'Grand Canal',desc:'See Venice from the water or along the canal paths.',price:'$10–80'},{time:'05:00 PM',name:'Dorsoduro',desc:'Explore a quieter neighbourhood away from the busiest streets.',price:'Free'},{time:'07:30 PM',name:'Cicchetti Dinner',desc:'Try small Venetian plates at a local bacaro.',price:'$15–30'}]}
+        ],
+        hotels:[['Hotel Artemide','Via Nazionale • Near Trevi Fountain','9.0','$220'],['The Hive Hotel','Monti • Near Termini','8.6','$150'],['Hotel Quirinale','Central Rome • Near Trevi Fountain','8.1','$180'],['Hotel Spadai','Florence • Near the Duomo','9.5','$210'],['Hotel L’Orologio Venezia','Venice • Near Santa Lucia','9.1','$230'],['Hotel Hassler Roma','Spanish Steps • Luxury','9.2','$700']],
+        food:[['Roscioli Salumeria con Cucina','Roman classics, pasta and wine','$$$'],['Da Enzo al 29','Traditional Roman trattoria in Trastevere','$$'],['Armando al Pantheon','Classic Roman cooking near the Pantheon','$$$'],['Pizzarium Bonci','Roman-style pizza al taglio','$$'],['Trattoria Cammillo','Traditional Tuscan cooking in Florence','$$$'],['Osteria alle Testiere','Small Venetian seafood restaurant','$$$']]
+      }
+    };
+
+    function extractDestinationName(text) {
+      const raw = (text || '').trim();
+      if (!raw) return '';
+      const patterns = [
+        /\b\d{1,2}\s*days?\s+(?:in|to)\s+([a-z][a-z .'-]{1,50}?)(?=\s+(?:for|with|and|focused|mostly|mainly|want|from|on|exploring|visiting)\b|[,!.?]|$)/i,
+        /\b(?:in|to)\s+([a-z][a-z .'-]{1,50}?)(?=\s+(?:for|with|and|focused|mostly|mainly|want|from|on|exploring|visiting)\b|[,!.?]|$)/i
+      ];
+      for (const re of patterns) {
+        const m = raw.match(re);
+        if (m && m[1]) return m[1].replace(/\s+/g, ' ').replace(/^the\s+/i, '').trim();
+      }
+      // Common standalone country inputs such as "Brazil" or "UK"
+      return raw.replace(/^\d{1,2}\s*days?\s*/i,'').replace(/^i\s+(?:want|would like)\s+(?:to\s+)?(?:go\s+)?(?:to\s+)?/i,'').trim();
+    }
+
+    function createGenericDestinationProfile(destination) {
+      const clean = (destination || 'your destination').replace(/\s+/g,' ').trim();
+      const lower = clean.toLowerCase();
+      const key = TOP_50_ALIASES[lower] || lower;
+      const data = TOP_50_DESTINATIONS[key];
+      const display = clean.replace(/\b\w/g,c=>c.toUpperCase());
+      const flagMap = { uk:'🇬🇧','united states':'🇺🇸',brazil:'🇧🇷',australia:'🇦🇺',japan:'🇯🇵',italy:'🇮🇹',france:'🇫🇷',spain:'🇪🇸',germany:'🇩🇪',canada:'🇨🇦',singapore:'🇸🇬',thailand:'🇹🇭',indonesia:'🇮🇩','south korea':'🇰🇷',usa:'🇺🇸','united arab emirates':'🇦🇪',china:'🇨🇳',india:'🇮🇳',turkey:'🇹🇷',mexico:'🇲🇽' };
+      const flag = data ? data.name.match(/[\u{1F1E6}-\u{1F1FF}]{2}/u)?.[0] : (flagMap[key] || '🌍');
+      const name = data ? data.name : `${display} ${flag}`;
+      const city = data ? `${data.city} ${flag}` : name;
+      const places = data ? data.places : [`Explore central ${display}`,`${display} Old Town or main sights`,`${display} local market`,`${display} museum or cultural site`,`${display} scenic area`];
+      const foods = data ? data.foods : [`Popular restaurant in ${display}`,`Local restaurant in ${display}`,`Casual food spot in ${display}`,`Market food in ${display}`,`Highly rated restaurant in ${display}`];
+      const hotels = data ? data.hotels : [`Central hotel in ${display}`,`Popular hotel in ${display}`,`Budget hotel in ${display}`,`Boutique hotel in ${display}`,`Luxury hotel in ${display}`];
+      const placeDesc = [
+        `Start the day exploring ${places[0]}.`,
+        `Spend time around ${places[1]}.`,
+        `Stop for lunch and explore ${places[2]}.`,
+        `See ${places[3]} and the surrounding area.`,
+        `Finish the day around ${places[4]}.`
+      ];
+      const baseDays = Array.from({length:5},(_,i)=>({day:i+1,title:`${places[i]} & ${display}`,city,timeline:[
+        {time:'09:00 AM',name:places[i],desc:placeDesc[i],price:i===0?'Free':'$10–30'},
+        {time:'11:30 AM',name:places[(i+1)%places.length],desc:`Explore another well-known part of ${display}.`,price:'Free–25'},
+        {time:'02:00 PM',name:foods[i%foods.length],desc:`Stop for lunch at ${foods[i%foods.length]}.`,price:'$15–40'},
+        {time:'04:30 PM',name:places[(i+2)%places.length],desc:`Take the afternoon at an easy pace around ${display}.`,price:'Free–30'},
+        {time:'07:30 PM',name:foods[(i+1)%foods.length],desc:`Dinner at ${foods[(i+1)%foods.length]}.`,price:'$20–60'}
+      ]}));
+      return {
+        match:[lower], name,
+        days:baseDays,
+        hotels:hotels.map((h,i)=>[h, data ? `Stay in ${data.city}` : `Accommodation in ${display}`, i===0?'8.4':'8.'+(5+i), i<2?'$90–150':i<4?'$150–280':'$300+']),
+        food:foods.map((f,i)=>[f,`Restaurant / food spot in ${data ? data.city : display}`,i<1?'$$$':i<4?'$$':'$$$$'])
+      };
+    }
+
+    function findDestinationProfile(text) {
+      const destinationRaw = extractDestinationName(text);
+      const destination = destinationRaw.toLowerCase().trim();
+      const canonical = TOP_50_ALIASES[destination] || destination;
+      // First: exact built-in Top 50 country match.
+      if (TOP_50_DESTINATIONS[canonical]) return { key:null, profile:createGenericDestinationProfile(destinationRaw) };
+      // Second: existing detailed profiles (Australia/Japan/UK/etc.)
+      const exactKey = Object.keys(DESTINATION_PROFILES).find(key => {
+        const p = DESTINATION_PROFILES[key];
+        return key === canonical || (p.match || []).some(word => word.toLowerCase() === canonical);
+      });
+      if (exactKey) return { key: exactKey, profile: DESTINATION_PROFILES[exactKey] };
+      // Finally, only use city/region keyword matching when the prompt did not contain a clear country.
+      const lower = (text || '').toLowerCase();
+      if (!destinationRaw || destinationRaw.length < 2) {
+        for (const key of Object.keys(DESTINATION_PROFILES)) {
+          const profile = DESTINATION_PROFILES[key];
+          if ((profile.match || []).some(word => lower.includes(word.toLowerCase()))) return { key, profile };
+        }
+      }
+      return { key:null, profile:createGenericDestinationProfile(destinationRaw || 'your destination') };
+    }
+
+    const DEFAULT_BG = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=1920&auto=format&fit=crop';
+
+    function App() {
+      const [promptInput, setPromptInput] = useState("");
+      const [activeTab, setActiveTab] = useState('home'); // 'home' | 'why' | 'destinations' | 'trips' | 'trip'
+      const [activePreviewDay, setActivePreviewDay] = useState(0);
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+      const [authModalOpen, setAuthModalOpen] = useState(false);
+      const [authMode, setAuthMode] = useState('login'); // login | signup | forgot
+      const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('wandor_logged_in') === 'true');
+      const [userEmail, setUserEmail] = useState(() => localStorage.getItem('wandor_user_email') || '');
+      const [userPassword, setUserPassword] = useState('');
+      const [profileName, setProfileName] = useState(() => localStorage.getItem('wandor_profile_name') || '');
+      const [profileTab, setProfileTab] = useState('overview');
+      
+      const [savedTrips, setSavedTrips] = useState([
+        { id: '101', title: '7 Days in Tokyo & Kyoto', date: 'Oct 2026', itemsCount: 14, budget: '$2,350', img: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=400&auto=format&fit=crop' }
+      ]);
+      const [toastMsg, setToastMsg] = useState('');
+      const [plannedProfileKey, setPlannedProfileKey] = useState(null);
+      const [customPlannedProfile, setCustomPlannedProfile] = useState(null);
+      const [plannedDayCount, setPlannedDayCount] = useState(3);
+      const [travellers, setTravellers] = useState(2);
+      const [budgetLevel, setBudgetLevel] = useState('mid');
+      const [travelPace, setTravelPace] = useState('balanced');
+      const [interests, setInterests] = useState('food, culture, sightseeing');
+      const [foodPreference, setFoodPreference] = useState('local food');
+
+      const activeDestinationMatch = useMemo(() => {
+        const lower = promptInput.toLowerCase();
+        for (const item of DESTINATION_BACKGROUNDS) {
+          if (item.keywords.some(kw => lower.includes(kw))) {
+            return item;
+          }
+        }
+        return null;
+      }, [promptInput]);
+
+      const requestedDestination = extractDestinationName(promptInput);
+      const top50Background = (() => { const k = TOP_50_ALIASES[requestedDestination.toLowerCase()] || requestedDestination.toLowerCase(); const d = TOP_50_DESTINATIONS[k]; return d ? `https://source.unsplash.com/1920x1080/?${encodeURIComponent(d.city+', '+requestedDestination)}` : null; })();
+      const currentBgImage = activeDestinationMatch ? activeDestinationMatch.img : (top50Background || DEFAULT_BG);
+      const plannedProfile = customPlannedProfile || (plannedProfileKey ? DESTINATION_PROFILES[plannedProfileKey] : null) || createGenericDestinationProfile('your destination');
+
+      // Read the requested trip length from phrases such as "7 days in Australia".
+      const extractDayCount = (text) => {
+        const match = (text || '').match(/\b(\d{1,2})\s*days?\b/i);
+        if (!match) return 3;
+        return Math.max(1, Math.min(30, parseInt(match[1], 10)));
+      };
+
+      // Keep the itinerary destination-specific while supporting any trip length up to 30 days.
+      // If the user asks for more days than the built-in sample days, Wandor continues the trip
+      // with another local day rather than falling back to Japan.
+      const getDaysForProfile = (profile, count) => {
+        const base = profile.days || [];
+        if (!base.length) return [];
+        return Array.from({ length: count }, (_, index) => {
+          const source = base[index % base.length];
+          const dayNumber = index + 1;
+          const isExtended = index >= base.length;
+          return {
+            ...source,
+            day: dayNumber,
+            title: isExtended ? `${source.title} — Day ${dayNumber}` : source.title,
+            timeline: source.timeline.map(item => ({ ...item }))
+          };
+        });
+      };
+
+      const plannedDays = getDaysForProfile(plannedProfile, plannedDayCount);
+      const currentDayData = plannedDays[activePreviewDay % Math.max(plannedDays.length, 1)] || plannedProfile.days[0];
+
+      const fileInputRef = useRef(null);
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(''), 3000);
+      };
+
+      const handleSaveTrip = (title) => {
+        const cleanTitle = title && title.length > 5 ? title : 'Custom Planned Trip';
+        const nights = Math.max(1, plannedDayCount - 1);
+        const hotelDaily = budgetLevel === 'budget' ? 110 : budgetLevel === 'luxury' ? 350 : 190;
+        const foodDaily = budgetLevel === 'budget' ? 35 : budgetLevel === 'luxury' ? 110 : 65;
+        const activityDaily = budgetLevel === 'budget' ? 20 : budgetLevel === 'luxury' ? 70 : 40;
+        const transportDaily = budgetLevel === 'budget' ? 12 : budgetLevel === 'luxury' ? 45 : 25;
+        const estimated = Math.round((nights * hotelDaily + plannedDayCount * (foodDaily + activityDaily + transportDaily)) * travellers);
+        const newTrip = {
+          id: Date.now().toString(),
+          title: cleanTitle.length > 42 ? cleanTitle.slice(0, 42) + '...' : cleanTitle,
+          date: 'Upcoming 2026',
+          itemsCount: plannedDayCount * 5,
+          budget: '$' + estimated.toLocaleString(),
+          img: currentBgImage
+        };
+        setSavedTrips(prev => [newTrip, ...prev]);
+        showToast('Saved to My Trips!');
+      };
+
+      const handleDeleteTrip = (id, e) => {
+        e.stopPropagation();
+        setSavedTrips(prev => prev.filter(t => t.id !== id));
+        showToast('Trip removed from saved.');
+      };
+
+      const handleAuthSubmit = (e) => {
+        e.preventDefault();
+        const email = userEmail.trim().toLowerCase();
+        if (!email) return;
+        const accounts = JSON.parse(localStorage.getItem('wandor_accounts') || '{}');
+        if (authMode === 'forgot') {
+          if (!accounts[email]) { showToast('No Wandor account was found for that email.'); return; }
+          showToast('Password reset instructions would be sent to your email.');
+          setAuthMode('login');
+          return;
+        }
+        if (!userPassword || userPassword.length < 6) { showToast('Password must be at least 6 characters.'); return; }
+        if (authMode === 'signup') {
+          if (accounts[email]) { showToast('An account with this email already exists.'); return; }
+          accounts[email] = { password: userPassword, name: email.split('@')[0] };
+          localStorage.setItem('wandor_accounts', JSON.stringify(accounts));
+          setProfileName(accounts[email].name);
+          showToast('Account created successfully!');
+        } else {
+          if (!accounts[email]) { showToast('Account not found. Create an account first.'); return; }
+          if (accounts[email].password !== userPassword) { showToast('Incorrect password.'); return; }
+          setProfileName(accounts[email].name || email.split('@')[0]);
+          showToast(`Welcome back, ${accounts[email].name || email.split('@')[0]}!`);
+        }
+        setIsLoggedIn(true);
+        localStorage.setItem('wandor_logged_in', 'true');
+        localStorage.setItem('wandor_user_email', email);
+        localStorage.setItem('wandor_profile_name', accounts[email]?.name || email.split('@')[0]);
+        setAuthModalOpen(false);
+      };
+
+      const handleLogout = () => {
+        setIsLoggedIn(false);
+        setUserPassword('');
+        localStorage.removeItem('wandor_logged_in');
+        showToast('You have been logged out.');
+        setActiveTab('home');
+      };
+
+      const GOOGLE_CLIENT_ID = '883890570361-3mvp6a4ch349n6mjhjb670t9rnubtr5c.apps.googleusercontent.com';
+
+      const handleGoogleCredentialResponse = (response) => {
+        try {
+          const payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+          const email = payload.email || '';
+          const name = payload.name || payload.given_name || (email ? email.split('@')[0] : 'Wandor traveller');
+          if (!email) throw new Error('Google did not return an email address.');
+          setUserEmail(email);
+          setProfileName(name);
+          setIsLoggedIn(true);
+          localStorage.setItem('wandor_logged_in', 'true');
+          localStorage.setItem('wandor_user_email', email);
+          localStorage.setItem('wandor_profile_name', name);
+          setAuthModalOpen(false);
+          showToast(`Welcome, ${name}!`);
+        } catch (error) {
+          console.error('Google sign-in error:', error);
+          showToast('Google sign-in could not be completed. Please try again.');
+        }
+      };
+
+      useEffect(() => {
+        if (!authModalOpen || authMode === 'forgot') return;
+        let attempts = 0;
+        const renderGoogleButton = () => {
+          const container = document.getElementById('wandor-google-button');
+          if (!container) return;
+          if (window.google?.accounts?.id) {
+            container.innerHTML = '';
+            window.google.accounts.id.initialize({
+              client_id: GOOGLE_CLIENT_ID,
+              callback: handleGoogleCredentialResponse,
+              ux_mode: 'popup',
+              auto_select: false,
+              cancel_on_tap_outside: true
+            });
+            window.google.accounts.id.renderButton(container, {
+              type: 'standard',
+              theme: 'outline',
+              size: 'large',
+              text: 'continue_with',
+              shape: 'rectangular',
+              width: 360
+            });
+            return true;
+          }
+          return false;
+        };
+        const timer = setInterval(() => {
+          attempts += 1;
+          if (renderGoogleButton() || attempts > 30) clearInterval(timer);
+        }, 200);
+        renderGoogleButton();
+        return () => clearInterval(timer);
+      }, [authModalOpen, authMode]);
+
+      return (
+        <div className="relative min-h-svh w-full text-slate-100 flex flex-col justify-between">
+          
+          {/* TOAST POPUP */}
+          {toastMsg && (
+            <div className="fixed top-6 right-6 z-[100] apple-glass-dark px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-amber-400/40 animate-bounce">
+              <SparklesIcon className="w-5 h-5 text-amber-400" />
+              <span className="text-sm font-semibold text-white">{toastMsg}</span>
+            </div>
+          )}
+
+          {/* AUTH / LOGIN / SIGN UP MODAL */}
+          {authModalOpen && (
+            <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+              <div className="relative w-full max-w-md apple-glass-dark p-8 rounded-3xl border border-white/20 shadow-2xl">
+                <button onClick={() => setAuthModalOpen(false)} className="absolute top-6 right-6 text-slate-400 hover:text-white p-2 rounded-full"><XIcon /></button>
+                <div className="text-center mb-6">
+                  <span className="font-display text-3xl font-bold text-amber-400">wandor</span>
+                  <h3 className="text-xl font-extrabold text-white mt-2">{authMode === 'signup' ? 'Create your account' : authMode === 'forgot' ? 'Reset your password' : 'Welcome back'}</h3>
+                  <p className="text-xs text-slate-400 mt-1">{authMode === 'forgot' ? 'Enter your email to reset your password.' : 'Save trips and access your profile from this device.'}</p>
+                </div>
+
+                {authMode !== 'forgot' && (
+                  <div className="w-full flex justify-center mb-4">
+                    <div id="wandor-google-button" className="min-h-[44px]"></div>
+                  </div>
+                )}
+
+                {authMode !== 'forgot' && <div className="flex items-center gap-3 my-4"><div className="h-px bg-white/10 flex-1"/><span className="text-[10px] text-slate-500 uppercase">or use email</span><div className="h-px bg-white/10 flex-1"/></div>}
+
+                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                  {authMode === 'signup' && (
+                    <div>
+                      <label className="text-xs font-bold uppercase text-slate-300 block mb-1">Name</label>
+                      <div className="flex items-center gap-2 bg-white/10 px-4 py-3 rounded-xl border border-white/10">
+                        <UserIcon className="w-4 h-4 text-amber-400" />
+                        <input type="text" placeholder="Your name" value={profileName} onChange={(e) => setProfileName(e.target.value)} className="bg-transparent border-none text-sm text-white outline-none w-full placeholder-slate-500" />
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-xs font-bold uppercase text-slate-300 block mb-1">Email Address</label>
+                    <div className="flex items-center gap-2 bg-white/10 px-4 py-3 rounded-xl border border-white/10">
+                      <UserIcon className="w-4 h-4 text-amber-400" />
+                      <input type="email" required placeholder="you@example.com" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="bg-transparent border-none text-sm text-white outline-none w-full placeholder-slate-500" />
+                    </div>
+                  </div>
+                  {authMode !== 'forgot' && (
+                    <div>
+                      <label className="text-xs font-bold uppercase text-slate-300 block mb-1">Password</label>
+                      <div className="flex items-center gap-2 bg-white/10 px-4 py-3 rounded-xl border border-white/10">
+                        <LockIcon className="w-4 h-4 text-amber-400" />
+                        <input type="password" required minLength="6" placeholder="At least 6 characters" value={userPassword} onChange={(e) => setUserPassword(e.target.value)} className="bg-transparent border-none text-sm text-white outline-none w-full placeholder-slate-500" />
+                      </div>
+                    </div>
+                  )}
+                  <button type="submit" className="w-full bg-amber-400 hover:bg-white text-black font-bold py-3.5 rounded-xl transition-all shadow-lg text-sm">
+                    {authMode === 'signup' ? 'Create Account' : authMode === 'forgot' ? 'Send Reset Instructions' : 'Log In'}
+                  </button>
+                </form>
+
+                <div className="text-center mt-5 space-y-2 text-xs">
+                  {authMode === 'login' && <><button onClick={() => setAuthMode('forgot')} className="text-slate-400 hover:text-amber-300">Forgot password?</button><br/><span className="text-slate-500">New to Wandor? </span><button onClick={() => setAuthMode('signup')} className="text-amber-400 font-bold">Create an account</button></>}
+                  {authMode === 'signup' && <><span className="text-slate-500">Already have an account? </span><button onClick={() => setAuthMode('login')} className="text-amber-400 font-bold">Log in</button></>}
+                  {authMode === 'forgot' && <button onClick={() => setAuthMode('login')} className="text-amber-400 font-bold">Back to log in</button>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* BACKGROUND DYNAMIC IMAGE & OVERLAY */}
+          <div className="fixed inset-0 w-full h-full z-0 overflow-hidden pointer-events-none transition-all duration-700">
+            <img 
+              key={currentBgImage}
+              src={currentBgImage}
+              alt="Destination ambient background"
+              className="absolute inset-0 w-full h-full object-cover filter brightness-[0.42] contrast-105 scale-105 transition-opacity duration-1000 animate-fadeIn"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/90" />
+          </div>
+
+          {/* MAIN CONTAINER */}
+          <div className="relative z-10 w-full max-w-[1280px] mx-auto min-h-svh flex flex-col justify-between">
+            
+            {/* HEADER NAVIGATION */}
+            <header className="w-full px-6 md:px-10 py-6 flex items-center justify-between">
+              
+              {/* Brand Logo */}
+              <div 
+                className="cursor-pointer flex items-center gap-2 group"
+                onClick={() => setActiveTab('home')}
+              >
+                <span className="font-display text-3xl md:text-4xl font-bold text-white tracking-tight group-hover:text-amber-400 transition-colors">
+                  wandor
+                </span>
+              </div>
+
+              {/* Desktop Nav */}
+              <nav className="hidden md:flex items-center gap-8 apple-glass px-8 py-3 rounded-full border border-white/20">
+                <button 
+                  onClick={() => setActiveTab('home')} 
+                  className={`text-sm font-medium transition-colors ${activeTab === 'home' ? 'text-amber-400 font-bold' : 'text-slate-300 hover:text-white'}`}
+                >
+                  Plan a Trip
+                </button>
+                <button 
+                  onClick={() => setActiveTab('why')} 
+                  className={`text-sm font-medium transition-colors ${activeTab === 'why' ? 'text-amber-400 font-bold' : 'text-slate-300 hover:text-white'}`}
+                >
+                  Why Wandor?
+                </button>
+                <button 
+                  onClick={() => setActiveTab('destinations')} 
+                  className={`text-sm font-medium transition-colors ${activeTab === 'destinations' ? 'text-amber-400 font-bold' : 'text-slate-300 hover:text-white'}`}
+                >
+                  Destinations
+                </button>
+                <button 
+                  onClick={() => setActiveTab('trips')} 
+                  className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${activeTab === 'trips' ? 'text-amber-400 font-bold' : 'text-slate-300 hover:text-white'}`}
+                >
+                  <BookmarkIcon className="w-4 h-4" />
+                  <span>My Trips</span>
+                  {savedTrips.length > 0 && (
+                    <span className="bg-amber-400 text-black text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ml-0.5">
+                      {savedTrips.length}
+                    </span>
+                  )}
+                </button>
+                {isLoggedIn && (
+                  <button onClick={() => setActiveTab('profile')} className={`text-sm font-medium transition-colors ${activeTab === 'profile' ? 'text-amber-400 font-bold' : 'text-slate-300 hover:text-white'}`}>Profile</button>
+                )}
+              </nav>
+
+              {/* Action Button & Account Toggle */}
+              <div className="flex items-center gap-3">
+                {isLoggedIn ? (
+                  <button onClick={() => setActiveTab('profile')} className="flex items-center gap-2 bg-amber-400/20 border border-amber-400/40 px-4 py-2 rounded-full hover:bg-amber-400/30">
+                    <span className="w-7 h-7 rounded-full bg-amber-400 text-black flex items-center justify-center text-xs font-extrabold">{(profileName || userEmail || 'U').charAt(0).toUpperCase()}</span>
+                    <span className="text-xs font-bold text-amber-300">{profileName || userEmail.split('@')[0]}</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setAuthModalOpen(true)}
+                    className="hidden sm:flex text-slate-300 hover:text-white text-xs font-semibold px-4 py-2 rounded-full border border-white/10 hover:border-white/30 transition-all"
+                  >
+                    Log In
+                  </button>
+                )}
+
+                <button 
+                  onClick={() => {
+                    setActiveTab('home');
+                    showToast('Ready! Enter your travel ideas below.');
+                  }}
+                  className="bg-white text-black font-semibold text-sm px-5 py-2.5 rounded-full hover:bg-amber-400 transition-all shadow-md active:scale-95"
+                >
+                  Start Planning
+                </button>
+
+                <button 
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="md:hidden w-10 h-10 rounded-full apple-glass flex items-center justify-center text-white"
+                >
+                  {mobileMenuOpen ? <XIcon /> : <MenuIcon />}
+                </button>
+              </div>
+            </header>
+
+            {/* MOBILE NAVIGATION DRAWER */}
+            {mobileMenuOpen && (
+              <div className="md:hidden z-50 px-6 py-4 apple-glass-dark mx-6 rounded-3xl border border-white/20 mb-6 flex flex-col gap-4">
+                <button 
+                  onClick={() => { setActiveTab('home'); setMobileMenuOpen(false); }}
+                  className="text-left text-base font-semibold py-2 text-white border-b border-white/10"
+                >
+                  Plan a Trip
+                </button>
+                <button 
+                  onClick={() => { setActiveTab('why'); setMobileMenuOpen(false); }}
+                  className="text-left text-base font-semibold py-2 text-white border-b border-white/10"
+                >
+                  Why Wandor?
+                </button>
+                <button 
+                  onClick={() => { setActiveTab('destinations'); setMobileMenuOpen(false); }}
+                  className="text-left text-base font-semibold py-2 text-white border-b border-white/10"
+                >
+                  Destinations
+                </button>
+                <button 
+                  onClick={() => { setActiveTab('trips'); setMobileMenuOpen(false); }}
+                  className="text-left text-base font-semibold py-2 text-white flex items-center justify-between border-b border-white/10"
+                >
+                  <span>My Trips</span>
+                  <span className="bg-amber-400 text-black text-xs font-bold px-2 py-0.5 rounded-full">
+                    {savedTrips.length}
+                  </span>
+                </button>
+                {isLoggedIn && (
+                  <button onClick={() => { setActiveTab('profile'); setMobileMenuOpen(false); }} className="text-left text-sm font-bold text-amber-400 py-1">My Profile</button>
+                )}
+                <button 
+                  onClick={() => { if (isLoggedIn) { handleLogout(); setMobileMenuOpen(false); } else { setAuthMode('login'); setAuthModalOpen(true); setMobileMenuOpen(false); } }}
+                  className="text-left text-sm font-bold text-amber-400 py-1"
+                >
+                  {isLoggedIn ? 'My Profile' : 'Log In / Register'}
+                </button>
+              </div>
+            )}
+
+            {/* TAB CONTENT 1: HOME PAGE */}
+            {activeTab === 'home' && (
+              <main className="w-full px-6 pt-4 pb-16 flex flex-col items-center">
+                
+                {/* HERO SECTION */}
+                <div className="text-center max-w-[800px] mb-10">
+                  <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.1] mb-5">
+                    Where will you go next?
+                  </h1>
+                  <p className="text-lg md:text-xl text-slate-300 font-normal leading-relaxed">
+                    Tell us where you're thinking of going, how long you're staying, and what you're into. We'll help you plan the rest.
+                  </p>
+                </div>
+
+                {/* TRIP PLANNER INPUT CARD */}
+                <div className="w-full max-w-[760px] apple-glass p-6 md:p-8 rounded-[32px] border border-white/30 shadow-2xl flex flex-col gap-6 mb-20">
+                  
+                  {}
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-amber-300 block">
+                      Your Trip Idea
+                    </label>
+
+                  </div>
+
+                  <textarea
+                    value={promptInput}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                    rows={3}
+                    className="w-full bg-transparent border-none outline-none text-lg md:text-xl font-medium text-white placeholder-slate-400 resize-none leading-relaxed"
+                  />
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <label className="bg-black/30 border border-white/10 rounded-2xl p-3">
+                      <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Travellers</span>
+                      <select value={travellers} onChange={e => setTravellers(Number(e.target.value))} className="w-full bg-transparent text-sm font-bold text-white outline-none">
+                        <option value="1" className="text-black">1 person</option><option value="2" className="text-black">2 people</option><option value="3" className="text-black">3 people</option><option value="4" className="text-black">4 people</option><option value="5" className="text-black">5 people</option><option value="6" className="text-black">6 people</option>
+                      </select>
+                    </label>
+                    <label className="bg-black/30 border border-white/10 rounded-2xl p-3">
+                      <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Budget</span>
+                      <select value={budgetLevel} onChange={e => setBudgetLevel(e.target.value)} className="w-full bg-transparent text-sm font-bold text-white outline-none"><option value="budget" className="text-black">Budget</option><option value="mid" className="text-black">Mid-range</option><option value="luxury" className="text-black">Luxury</option></select>
+                    </label>
+                    <label className="bg-black/30 border border-white/10 rounded-2xl p-3">
+                      <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Pace</span>
+                      <select value={travelPace} onChange={e => setTravelPace(e.target.value)} className="w-full bg-transparent text-sm font-bold text-white outline-none"><option value="relaxed" className="text-black">Relaxed</option><option value="balanced" className="text-black">Balanced</option><option value="packed" className="text-black">Packed</option></select>
+                    </label>
+                    <label className="bg-black/30 border border-white/10 rounded-2xl p-3">
+                      <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Food</span>
+                      <select value={foodPreference} onChange={e => setFoodPreference(e.target.value)} className="w-full bg-transparent text-sm font-bold text-white outline-none"><option value="local food" className="text-black">Local food</option><option value="vegetarian" className="text-black">Vegetarian</option><option value="halal" className="text-black">Halal-friendly</option><option value="mixed" className="text-black">Anything</option></select>
+                    </label>
+                  </div>
+                  <label className="block">
+                    <span className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">What are you into?</span>
+                    <input value={interests} onChange={e => setInterests(e.target.value)} placeholder="e.g. beaches, shopping, football, museums" className="w-full bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white outline-none placeholder-slate-500" />
+                  </label>
+
+                  <div className="pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-full border border-white/15">
+                      <CalendarIcon className="w-4 h-4 text-amber-400" />
+                      <span className="text-xs text-slate-300 font-medium">Dates:</span>
+                      <input 
+                        type="date" 
+                        defaultValue="2026-10-01" 
+                        className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <input ref={fileInputRef} type="file" className="hidden" onChange={() => showToast("Added notes/PDF!")} />
+                      <button 
+                        onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                        className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-all border border-white/20"
+                        title="Upload trip notes or PDF"
+                      >
+                        <UploadIcon className="w-4 h-4" />
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          const result = findDestinationProfile(promptInput);
+                          const profile = result.profile;
+                          const days = extractDayCount(promptInput);
+                          setCustomPlannedProfile(result.key ? null : profile);
+                          setPlannedProfileKey(result.key);
+                          setActivePreviewDay(0);
+                          setPlannedDayCount(days);
+                          setActivePreviewDay(0);
+                          setTimeout(() => handleSaveTrip(promptInput || `Trip to ${profile.name}`), 0);
+                          setActiveTab('trip');
+                          window.scrollTo({ top: 0, behavior: 'auto' });
+                        }}
+                        className="bg-amber-400 text-black font-semibold text-sm px-6 py-3 rounded-full hover:bg-white transition-all shadow-lg flex items-center gap-2"
+                      >
+                        <span>Build My Trip</span>
+                        <ChevronRightIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* POPULAR DESTINATIONS */}
+                <section className="w-full max-w-[1100px] mb-20">
+                  <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Popular Destinations</span>
+                      <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-1">Explore top places to visit</h2>
+                      <p className="text-slate-300 text-sm mt-1">Click any card to start building a tailored itinerary.</p>
+                    </div>
+                    <button 
+                      onClick={() => setActiveTab('destinations')}
+                      className="text-xs font-bold text-amber-300 hover:text-white transition-colors flex items-center gap-1"
+                    >
+                      <span>View All Destinations</span>
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {POPULAR_DESTINATIONS.map((dest) => (
+                      <div 
+                        key={dest.id}
+                        onClick={() => {
+                          setPromptInput(dest.prompt);
+                          showToast(`Loaded ${dest.name} prompt into planner!`);
+                          window.scrollTo({ top: 150, behavior: 'smooth' });
+                        }}
+                        className="apple-glass rounded-3xl overflow-hidden border border-white/20 cursor-pointer group hover:border-amber-400 transition-all flex flex-col justify-between"
+                      >
+                        <div className="relative h-48 overflow-hidden">
+                          <img src={dest.img} alt={dest.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <span className="absolute top-4 right-4 text-3xl">{dest.flag}</span>
+                        </div>
+                        <div className="p-6 flex-1 flex flex-col justify-between">
+                          <div>
+                            <h3 className="text-2xl font-extrabold text-white mb-1">{dest.name}</h3>
+                            <p className="text-xs text-slate-300 mb-4">{dest.tagline}</p>
+                          </div>
+                          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                            <div className="flex gap-1.5 flex-wrap">
+                              {dest.tags.map((t, i) => (
+                                <span key={i} className="text-[10px] font-semibold bg-white/10 px-2 py-0.5 rounded text-slate-300">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                            <span className="text-xs font-bold text-amber-300 group-hover:translate-x-1 transition-transform">Explore →</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* WHY WANDOR? FEATURE SECTION */}
+                <section className="w-full max-w-[1100px] mb-20">
+                  <div className="mb-10 text-center">
+                    <span className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 px-4 py-1.5 rounded-full border border-amber-400/20">
+                      Why Wandor?
+                    </span>
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-4">
+                      Travel planning, without the headache
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {WHY_WANDOR_FEATURES.map((feat, idx) => {
+                      const IconComp = feat.icon;
+                      return (
+                        <div key={idx} className="apple-glass p-6 rounded-3xl border border-white/15 flex flex-col justify-between hover:border-white/30 transition-all">
+                          <div>
+                            <div className="w-10 h-10 rounded-2xl bg-amber-400/20 text-amber-300 flex items-center justify-center mb-4">
+                              <IconComp />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">{feat.title}</h3>
+                            <p className="text-sm text-slate-300 leading-relaxed">
+                              {feat.desc}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* INTERACTIVE DAY-BY-DAY ITINERARY PREVIEW */}
+                <section className="w-full max-w-[1100px] mb-20">
+                  <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Itinerary Preview</span>
+                      <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-1">Your trip, day by day</h2>
+                      <p className="text-slate-300 text-sm mt-1">Here's what your trip could look like.</p>
+                    </div>
+
+                    {/* Day Controls */}
+                    <div className="flex items-center gap-2">
+                      <button 
+                        disabled={activePreviewDay === 0}
+                        onClick={() => setActivePreviewDay(p => Math.max(0, p - 1))}
+                        className={`p-2.5 rounded-full apple-glass ${activePreviewDay === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white/20'}`}
+                      >
+                        <ChevronLeftIcon />
+                      </button>
+
+                      <span className="text-xs font-bold px-4 py-2 apple-glass rounded-full text-amber-300">
+                        Day {currentDayData.day} of {plannedDays.length}
+                      </span>
+
+                      <button 
+                        disabled={activePreviewDay === plannedDays.length - 1}
+                        onClick={() => setActivePreviewDay(p => Math.min(plannedDays.length - 1, p + 1))}
+                        className={`p-2.5 rounded-full apple-glass ${activePreviewDay === plannedDays.length - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white/20'}`}
+                      >
+                        <ChevronRightIcon />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Active Day Timeline Card */}
+                  <div className="apple-glass p-6 md:p-8 rounded-[32px] border border-white/20">
+                    <div className="pb-6 border-b border-white/10 flex items-center justify-between mb-6">
+                      <div>
+                        <span className="text-xs font-semibold text-slate-400 uppercase">DAY 0{currentDayData.day}</span>
+                        <h3 className="text-2xl font-extrabold text-white">{currentDayData.title}</h3>
+                      </div>
+                      <span className="text-xs font-bold bg-white/10 px-3 py-1 rounded-full text-slate-200">
+                        {currentDayData.city}
+                      </span>
+                    </div>
+
+                    {/* Timeline List */}
+                    <div className="relative pl-6 border-l-2 border-amber-400/40 space-y-6">
+                      {currentDayData.timeline.map((step, idx) => (
+                        <div key={idx} className="relative group">
+                          <div className="absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full bg-amber-400 border-4 border-black" />
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-amber-300">{step.time}</span>
+                            <span className="text-xs font-medium text-slate-400">{step.price}</span>
+                          </div>
+                          <h4 className="text-base font-bold text-white mt-0.5 group-hover:text-amber-300 transition-colors">
+                            {step.name}
+                          </h4>
+                          <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                            {step.desc}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* BUDGET BREAKDOWN SECTION */}
+                <section className="w-full max-w-[1100px] mb-20">
+                  <div className="mb-8">
+                    <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Budget Breakdown</span>
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-1">How much will it cost?</h2>
+                    <p className="text-slate-300 text-sm mt-1">Here's a rough breakdown of what you might spend on your trip.</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="apple-glass p-5 rounded-2xl text-center border border-white/15">
+                      <span className="text-2xl mb-1 block">✈️</span>
+                      <span className="text-xs text-slate-400 font-medium block">Flights</span>
+                      <span className="text-lg font-bold text-white mt-1 block">$650</span>
+                    </div>
+
+                    <div className="apple-glass p-5 rounded-2xl text-center border border-white/15">
+                      <span className="text-2xl mb-1 block">🏨</span>
+                      <span className="text-xs text-slate-400 font-medium block">Hotels</span>
+                      <span className="text-lg font-bold text-white mt-1 block">$900</span>
+                    </div>
+
+                    <div className="apple-glass p-5 rounded-2xl text-center border border-white/15">
+                      <span className="text-2xl mb-1 block">🍜</span>
+                      <span className="text-xs text-slate-400 font-medium block">Food</span>
+                      <span className="text-lg font-bold text-white mt-1 block">$400</span>
+                    </div>
+
+                    <div className="apple-glass p-5 rounded-2xl text-center border border-white/15">
+                      <span className="text-2xl mb-1 block">🎟️</span>
+                      <span className="text-xs text-slate-400 font-medium block">Activities</span>
+                      <span className="text-lg font-bold text-white mt-1 block">$250</span>
+                    </div>
+
+                    <div className="apple-glass p-5 rounded-2xl text-center border border-white/15">
+                      <span className="text-2xl mb-1 block">🚇</span>
+                      <span className="text-xs text-slate-400 font-medium block">Transport</span>
+                      <span className="text-lg font-bold text-white mt-1 block">$150</span>
+                    </div>
+
+                    <div className="apple-glass p-5 rounded-2xl text-center border border-amber-400/40 bg-amber-400/10">
+                      <span className="text-2xl mb-1 block">💰</span>
+                      <span className="text-xs text-amber-300 font-bold block">Estimated Total</span>
+                      <span className="text-xl font-extrabold text-amber-400 mt-1 block">$2,350</span>
+                    </div>
+                  </div>
+                </section>
+
+                {/* HOTEL RECOMMENDATIONS SECTION */}
+                <section className="w-full max-w-[1100px] mb-20">
+                  <div className="mb-8">
+                    <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Accommodations</span>
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-1">Where will you stay?</h2>
+                    <p className="text-slate-300 text-sm mt-1">A few places to stay that are worth checking out.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {plannedProfile.hotels.map((hotelData, idx) => {
+                      const hotel = { type: idx === 0 ? 'Best Value' : idx === 5 ? 'Luxury Stay' : idx === 1 ? 'Great Location' : 'Good Choice', badgeColor: idx === 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : idx === 5 ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/30', name: hotelData[0], location: hotelData[1], rating: hotelData[2], price: hotelData[3], img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop' };
+                      return (
+                      <div key={idx} className="apple-glass rounded-3xl overflow-hidden border border-white/20 flex flex-col justify-between group">
+                        <div className="relative h-48 overflow-hidden">
+                          <img src={hotel.img} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <span className={`absolute top-4 left-4 text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border backdrop-blur-md ${hotel.badgeColor}`}>
+                            {hotel.type}
+                          </span>
+                        </div>
+                        <div className="p-6 flex-1 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="text-lg font-bold text-white">{hotel.name}</h3>
+                              <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                                <StarIcon className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {hotel.rating}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300 mb-4">{hotel.location}</p>
+                          </div>
+                          <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                            <span className="text-base font-extrabold text-white">{hotel.price} <span className="text-xs text-slate-400 font-normal">/ night</span></span>
+                            <a
+                              href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(hotel.name)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-bold text-amber-300 hover:text-white transition-colors"
+                            >
+                              View on Booking.com →
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* FOOD RECOMMENDATIONS SECTION */}
+                <section className="w-full max-w-[1100px] mb-20">
+                  <div className="mb-8">
+                    <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Food</span>
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-1">What should you eat?</h2>
+                    <p className="text-slate-300 text-sm mt-1">A few local favourites to look out for in {plannedProfile.name}.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {plannedProfile.food.map((item, idx) => (
+                      <a
+                        key={idx}
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item[0] + ' ' + plannedProfile.name.replace(/\p{Emoji_Presentation}/gu, '').trim())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="apple-glass p-5 rounded-2xl border border-white/15 flex items-center justify-between gap-4 hover:bg-white/10 hover:border-amber-400/40 transition-all group"
+                      >
+                        <div>
+                          <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors">{item[0]}</h3>
+                          <p className="text-xs text-slate-300 mt-1">{item[1]}</p>
+                          <span className="text-[10px] text-slate-400 mt-2 block">Search on Google Maps →</span>
+                        </div>
+                        <span className="text-xs font-bold text-amber-300 whitespace-nowrap">{item[2]}</span>
+                      </a>
+                    ))}
+                  </div>
+                </section>
+
+                {/* REVIEWS SECTION */}
+                <section className="w-full max-w-[1100px] mb-12">
+                  <div className="mb-8">
+                    <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Community</span>
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-white mt-1">People who've tried Wandor</h2>
+                    <p className="text-slate-300 text-sm mt-1">See what other travellers think.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {USER_REVIEWS.map((rev) => (
+                      <div key={rev.id} className="apple-glass p-6 rounded-3xl border border-white/15 flex flex-col justify-between">
+                        <p className="text-sm font-medium text-slate-200 leading-relaxed mb-6">
+                          "{rev.comment}"
+                        </p>
+                        <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                          <img src={rev.avatar} alt={rev.name} className="w-10 h-10 rounded-full object-cover border border-white/30" />
+                          <div>
+                            <h4 className="text-sm font-bold text-white">{rev.name}</h4>
+                            <span className="text-xs text-amber-300 font-semibold">{rev.destination}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+              </main>
+            )}
+
+            {/* TAB CONTENT: GENERATED TRIP PAGE */}
+            {activeTab === 'trip' && (
+              <main className="w-full px-6 py-10 flex flex-col items-center">
+                <div className="w-full max-w-[1100px]">
+                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10">
+                    <div>
+                      <button onClick={() => setActiveTab('home')} className="text-xs font-bold text-amber-300 hover:text-white mb-4">← Back to planning</button>
+                      <span className="text-xs font-bold uppercase tracking-widest text-amber-400 block">Your Trip</span>
+                      <h1 className="text-4xl md:text-5xl font-extrabold text-white mt-2">{plannedProfile.name}</h1>
+                      <p className="text-slate-300 mt-2">{plannedDayCount} {plannedDayCount === 1 ? 'day' : 'days'} planned for this trip.</p>
+                    </div>
+                    <button onClick={() => handleSaveTrip(`${plannedDayCount} Days in ${plannedProfile.name.replace(/[^A-Za-z ]/g,'').trim()}`)} className="bg-amber-400 text-black font-bold px-5 py-3 rounded-full hover:bg-white transition-all">Save Trip</button>
+                  </div>
+
+                  <section className="apple-glass rounded-3xl border border-white/20 p-6 md:p-8 mb-10">
+                    <div className="flex items-center justify-between gap-4 mb-6">
+                      <div>
+                        <span className="text-xs uppercase tracking-widest text-amber-400 font-bold">Itinerary</span>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-1">Day {currentDayData.day} of {plannedDayCount}</h2>
+                      </div>
+                      <div className="flex gap-2">
+                        <button disabled={activePreviewDay === 0} onClick={() => setActivePreviewDay(d => Math.max(0, d - 1))} className="w-10 h-10 rounded-full bg-white/10 border border-white/15 disabled:opacity-30">←</button>
+                        <button disabled={activePreviewDay >= plannedDays.length - 1} onClick={() => setActivePreviewDay(d => Math.min(plannedDays.length - 1, d + 1))} className="w-10 h-10 rounded-full bg-white/10 border border-white/15 disabled:opacity-30">→</button>
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-amber-300 mb-1">{currentDayData.title}</h3>
+                    <p className="text-sm text-slate-300 mb-6">{currentDayData.city}</p>
+                    <div className="space-y-4">
+                      {currentDayData.timeline.map((item, idx) => (
+                        <div key={idx} className="flex gap-4 p-4 rounded-2xl bg-black/25 border border-white/10">
+                          <div className="w-20 shrink-0 text-xs font-bold text-amber-300 pt-1">{item.time}</div>
+                          <div className="flex-1">
+                            <h4 className="font-bold text-white">{item.name}</h4>
+                            <p className="text-sm text-slate-300 mt-1">{item.desc}</p>
+                          </div>
+                          <span className="text-xs font-bold text-slate-200 pt-1">{item.price}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="w-full mb-10">
+                    <div className="mb-6">
+                      <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Trip overview</span>
+                      <h2 className="text-3xl font-extrabold text-white mt-1">Your trip at a glance</h2>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                      {[['👥','Travellers',travellers],['💰','Style',budgetLevel],['🚶','Pace',travelPace],['🍽️','Food',foodPreference],['🎯','Interests',interests]].map(([icon,label,value],i)=><div key={i} className="apple-glass p-4 rounded-2xl border border-white/15"><div className="text-xl">{icon}</div><div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mt-2">{label}</div><div className="text-sm font-bold text-white mt-1 truncate">{value}</div></div>)}
+                    </div>
+                  </section>
+
+                  <section className="w-full mb-10">
+                    <div className="mb-6"><span className="text-xs font-bold uppercase tracking-widest text-amber-400">Budget</span><h2 className="text-3xl font-extrabold text-white mt-1">Estimated trip cost</h2><p className="text-slate-300 text-sm mt-1">A rough guide based on your trip length, group size and budget style.</p></div>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                      {(() => { const nights=Math.max(1,plannedDayCount-1); const h=(budgetLevel==='budget'?110:budgetLevel==='luxury'?350:190)*nights*travellers; const f=(budgetLevel==='budget'?35:budgetLevel==='luxury'?110:65)*plannedDayCount*travellers; const a=(budgetLevel==='budget'?20:budgetLevel==='luxury'?70:40)*plannedDayCount*travellers; const t=(budgetLevel==='budget'?12:budgetLevel==='luxury'?45:25)*plannedDayCount*travellers; const total=h+f+a+t; return [['🏨','Hotels',h],['🍜','Food',f],['🎟️','Activities',a],['🚆','Transport',t],['💳','Total',total]].map(([icon,label,val],i)=><div key={i} className={`apple-glass p-5 rounded-2xl border ${i===4?'border-amber-400/40':'border-white/15'}`}><div className="text-xl">{icon}</div><div className="text-xs text-slate-400 mt-2">{label}</div><div className="text-lg font-extrabold text-white mt-1">${Math.round(val).toLocaleString()}</div></div>); })()}
+                    </div>
+                  </section>
+
+                  <section className="w-full mb-10">
+                    <div className="mb-6"><span className="text-xs font-bold uppercase tracking-widest text-amber-400">Getting around</span><h2 className="text-3xl font-extrabold text-white mt-1">Transport between stops</h2></div>
+                    <div className="space-y-3">
+                      {currentDayData.timeline.slice(0,-1).map((item,idx)=><div key={idx} className="apple-glass p-4 rounded-2xl border border-white/15 flex items-center gap-4"><span className="text-xl">{idx%3===0?'🚆':idx%3===1?'🚶':'🚌'}</span><div className="flex-1"><div className="text-sm font-bold text-white">{item.name} → {currentDayData.timeline[idx+1].name}</div><div className="text-xs text-slate-400 mt-1">Approx. {10+idx*7}–{18+idx*8} min • local transport</div></div></div>)}
+                    </div>
+                  </section>
+
+                  <section className="w-full mb-10">
+                    <div className="mb-6"><span className="text-xs font-bold uppercase tracking-widest text-amber-400">Map</span><h2 className="text-3xl font-extrabold text-white mt-1">See today's route</h2></div>
+                    <a target="_blank" rel="noopener noreferrer" href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(currentDayData.timeline[0].name+' '+plannedProfile.name)}&destination=${encodeURIComponent(currentDayData.timeline[currentDayData.timeline.length-1].name+' '+plannedProfile.name)}&waypoints=${encodeURIComponent(currentDayData.timeline.slice(1,-1).map(x=>x.name+' '+plannedProfile.name).join('|'))}`} className="block apple-glass rounded-3xl border border-white/15 p-8 hover:bg-white/10 transition-all"><div className="text-5xl mb-4">🗺️</div><h3 className="text-xl font-bold text-white">Open route in Google Maps</h3><p className="text-sm text-slate-300 mt-2">See the stops, directions and travel time for {currentDayData.title}.</p><span className="inline-block mt-5 text-sm font-bold text-amber-300">Open map →</span></a>
+                  </section>
+
+                  <section className="w-full mb-10">
+                    <div className="mb-6"><span className="text-xs font-bold uppercase tracking-widest text-amber-400">Flights & essentials</span><h2 className="text-3xl font-extrabold text-white mt-1">Before you go</h2></div>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <a target="_blank" rel="noopener noreferrer" href={`https://www.google.com/travel/flights?q=flights%20to%20${encodeURIComponent(plannedProfile.name.replace(/[^A-Za-z ]/g,'').trim())}`} className="apple-glass p-6 rounded-2xl border border-white/15 hover:bg-white/10"><div className="text-2xl">✈️</div><h3 className="font-bold text-white mt-3">Search flights</h3><p className="text-xs text-slate-400 mt-1">Compare current flight options.</p></a>
+                      <div className="apple-glass p-6 rounded-2xl border border-white/15"><div className="text-2xl">🎒</div><h3 className="font-bold text-white mt-3">Packing checklist</h3><p className="text-xs text-slate-400 mt-1">Passport • adapter • comfortable shoes • travel documents • toiletries</p></div>
+                      <div className="apple-glass p-6 rounded-2xl border border-white/15"><div className="text-2xl">ℹ️</div><h3 className="font-bold text-white mt-3">Travel basics</h3><p className="text-xs text-slate-400 mt-1">Check visa rules, local currency, weather and entry requirements before booking.</p></div>
+                    </div>
+                  </section>
+
+                  <section className="w-full mb-10">
+                    <div className="mb-6"><span className="text-xs font-bold uppercase tracking-widest text-amber-400">Food</span>
+                      <h2 className="text-3xl font-extrabold text-white mt-1">Restaurants worth checking out</h2>
+                      <p className="text-slate-300 text-sm mt-1">Click a restaurant to find it on Google Maps.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {plannedProfile.food.map((item, idx) => (
+                        <a key={idx} href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item[0] + ' ' + plannedProfile.name.replace(/\p{Emoji_Presentation}/gu, '').trim())}`} target="_blank" rel="noopener noreferrer" className="apple-glass p-5 rounded-2xl border border-white/15 hover:bg-white/10 transition-all">
+                          <div className="flex items-start justify-between gap-3">
+                            <div><h3 className="font-bold text-white">{item[0]}</h3><p className="text-xs text-slate-300 mt-1">{item[1]}</p></div>
+                            <span className="text-xs text-amber-300 font-bold">{item[2]}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-4">Open in Google Maps →</div>
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="w-full mb-10">
+                    <div className="mb-6">
+                      <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Accommodation</span>
+                      <h2 className="text-3xl font-extrabold text-white mt-1">Where to stay</h2>
+                      <p className="text-slate-300 text-sm mt-1">Click a hotel to open its Booking.com search.</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {plannedProfile.hotels.map((hotel, idx) => (
+                        <a key={idx} href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(hotel[0])}`} target="_blank" rel="noopener noreferrer" className="apple-glass p-5 rounded-2xl border border-white/15 hover:bg-white/10 transition-all">
+                          <div className="flex items-start justify-between gap-3"><h3 className="font-bold text-white">{hotel[0]}</h3><span className="text-xs text-amber-300 font-bold">★ {hotel[2]}</span></div>
+                          <p className="text-xs text-slate-300 mt-2">{hotel[1]}</p>
+                          <div className="flex items-center justify-between mt-4"><span className="text-sm font-bold text-white">{hotel[3]} <span className="text-xs text-slate-400 font-normal">/ night</span></span><span className="text-[10px] text-amber-300 font-bold">Booking.com →</span></div>
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </main>
+            )}
+
+            {/* TAB CONTENT 2: WHY WANDOR? DETAILED VIEW */}
+            {activeTab === 'why' && (
+              <main className="w-full px-6 py-12 max-w-[900px] mx-auto">
+                <div className="apple-glass p-8 md:p-12 rounded-[36px] border border-white/20">
+                  <span className="text-xs font-bold uppercase tracking-widest text-amber-400">About Wandor</span>
+                  <h2 className="text-4xl font-extrabold text-white mt-2 mb-6">Travel planning, built for real people</h2>
+                  <p className="text-lg text-slate-200 leading-relaxed mb-8">
+                    Wandor is built to make trip planning simple and realistic. Rather than throwing endless lists of generic sights at you, we help put together a balanced, day-by-day plan with cost ideas and hidden spots.
+                  </p>
+
+                  <div className="space-y-6">
+                    <div className="p-6 bg-black/40 rounded-2xl border border-white/10">
+                      <h3 className="text-xl font-bold text-amber-300 mb-2">No marketing buzzwords</h3>
+                      <p className="text-sm text-slate-300 leading-relaxed">
+                        We don't try to "revolutionize travel". We just give you simple, useful tools to map out where to go, where to stay, and what to spend.
+                      </p>
+                    </div>
+
+                    <div className="p-6 bg-black/40 rounded-2xl border border-white/10">
+                      <h3 className="text-xl font-bold text-amber-300 mb-2">Realistic budgets before booking</h3>
+                      <p className="text-sm text-slate-300 leading-relaxed">
+                        Know your estimated totals for flights, hotels, food, and activities upfront so there are no hidden surprises on your trip.
+                      </p>
+                    </div>
+
+                    <div className="p-6 bg-black/40 rounded-2xl border border-white/10">
+                      <h3 className="text-xl font-bold text-amber-300 mb-2">Built around your rhythm</h3>
+                      <p className="text-sm text-slate-300 leading-relaxed">
+                        Whether you want an action-packed 12-hour sight crawl or a quiet cafe-and-walk pace, your itinerary fits your travel style.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 text-center">
+                    <button 
+                      onClick={() => setActiveTab('home')} 
+                      className="bg-amber-400 text-black font-bold px-8 py-3.5 rounded-full hover:bg-white transition-all shadow-lg"
+                    >
+                      Start Planning
+                    </button>
+                  </div>
+                </div>
+              </main>
+            )}
+
+            {/* TAB CONTENT 3: DESTINATIONS GRID */}
+            {activeTab === 'destinations' && (
+              <main className="w-full px-6 py-12 max-w-[1100px] mx-auto">
+                <div className="mb-10 text-center">
+                  <h2 className="text-4xl font-extrabold text-white">Not sure where to go?</h2>
+                  <p className="text-slate-300 text-base mt-2">Take a look around. Find somewhere new, get some ideas, and start planning your next trip.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {POPULAR_DESTINATIONS.map((dest) => (
+                    <div 
+                      key={dest.id}
+                      onClick={() => {
+                        setPromptInput(dest.prompt);
+                        setActiveTab('home');
+                        showToast(`Loaded ${dest.name} trip idea!`);
+                      }}
+                      className="apple-glass rounded-3xl overflow-hidden border border-white/20 cursor-pointer group hover:border-amber-400 transition-all flex flex-col justify-between"
+                    >
+                      <div className="relative h-52 overflow-hidden">
+                        <img src={dest.img} alt={dest.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <span className="absolute top-4 right-4 text-3xl">{dest.flag}</span>
+                      </div>
+                      <div className="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h3 className="text-2xl font-extrabold text-white mb-1">{dest.name}</h3>
+                          <p className="text-xs text-slate-300 mb-4">{dest.tagline}</p>
+                        </div>
+                        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                          <div className="flex gap-1.5">
+                            {dest.tags.map((t, i) => (
+                              <span key={i} className="text-[10px] font-semibold bg-white/10 px-2 py-0.5 rounded text-slate-300">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-xs font-bold text-amber-300">Plan Trip →</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </main>
+            )}
+
+            {/* TAB CONTENT: PROFILE */}
+            {activeTab === 'profile' && isLoggedIn && (
+              <main className="w-full px-6 pt-10 pb-20 flex flex-col items-center">
+                <div className="w-full max-w-[900px]">
+                  <div className="apple-glass-dark rounded-[32px] border border-white/15 p-8 md:p-10 mb-8">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="flex items-center gap-5">
+                        <div className="w-20 h-20 rounded-full bg-amber-400 text-black flex items-center justify-center text-3xl font-extrabold">{(profileName || userEmail || 'U').charAt(0).toUpperCase()}</div>
+                        <div><p className="text-xs uppercase tracking-widest text-amber-300 font-bold">Your account</p><h1 className="text-3xl font-extrabold text-white">{profileName || userEmail.split('@')[0]}</h1><p className="text-sm text-slate-400 mt-1">{userEmail}</p></div>
+                      </div>
+                      <button onClick={handleLogout} className="px-5 py-3 rounded-xl border border-white/15 text-sm font-bold text-white hover:bg-white/10">Log out</button>
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="apple-glass p-7 rounded-3xl border border-white/15"><h2 className="text-xl font-bold text-white mb-2">Saved trips</h2><p className="text-sm text-slate-400 mb-5">{savedTrips.length} trip{savedTrips.length === 1 ? '' : 's'} saved on this device.</p><button onClick={() => setActiveTab('trips')} className="text-sm font-bold text-amber-300">View My Trips →</button></div>
+                    <div className="apple-glass p-7 rounded-3xl border border-white/15"><h2 className="text-xl font-bold text-white mb-2">Account</h2><p className="text-sm text-slate-400">Your account session is stored locally in this browser.</p><button onClick={handleLogout} className="mt-5 text-sm font-bold text-amber-300">Log out →</button></div>
+                  </div>
+                </div>
+              </main>
+            )}
+
+            {/* TAB CONTENT 4: MY TRIPS */}
+            {activeTab === 'trips' && (
+              <main className="w-full px-6 py-12 max-w-[900px] mx-auto">
+                <div className="mb-8 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-3xl font-extrabold text-white">My Saved Trips</h2>
+                    <p className="text-slate-300 text-sm mt-1">All your planned itineraries in one place.</p>
+                  </div>
+                  <button 
+                    onClick={() => setActiveTab('home')}
+                    className="bg-amber-400 text-black font-bold text-xs px-5 py-2.5 rounded-full hover:bg-white transition-all"
+                  >
+                    + New Trip
+                  </button>
+                </div>
+
+                {savedTrips.length === 0 ? (
+                  <div className="apple-glass p-12 text-center rounded-3xl">
+                    <p className="text-slate-400 text-sm mb-4">You haven't saved any trips yet.</p>
+                    <button onClick={() => setActiveTab('home')} className="bg-amber-400 text-black font-bold px-6 py-2.5 rounded-full">
+                      Plan Your First Trip
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {savedTrips.map((trip) => (
+                      <div key={trip.id} className="apple-glass p-6 rounded-2xl border border-white/15 flex items-center justify-between gap-4 group">
+                        <div className="flex items-center gap-4">
+                          <img src={trip.img} alt={trip.title} className="w-16 h-16 rounded-xl object-cover border border-white/20" />
+                          <div>
+                            <h3 className="text-lg font-bold text-white group-hover:text-amber-300 transition-colors">{trip.title}</h3>
+                            <span className="text-xs text-slate-300 font-medium block mt-0.5">
+                              {trip.date} • {trip.itemsCount} activities planned
+                            </span>
+                            <span className="text-xs font-bold text-amber-400">Est. Total: {trip.budget}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => {
+                              setPromptInput(trip.title);
+                              setActiveTab('home');
+                              showToast(`Loaded ${trip.title}`);
+                            }}
+                            className="bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-2.5 rounded-full transition-all"
+                          >
+                            View Itinerary
+                          </button>
+                          <button 
+                            onClick={(e) => handleDeleteTrip(trip.id, e)}
+                            className="w-9 h-9 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-all border border-red-500/20"
+                            title="Delete saved trip"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </main>
+            )}
+
+            {/* FOOTER SECTION */}
+            <footer className="w-full border-t border-white/10 pt-12 pb-8 px-6 md:px-10 text-slate-400 text-xs">
+              <div className="max-w-[1100px] mx-auto grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+                <div className="col-span-2">
+                  <span className="font-display text-2xl font-bold text-white tracking-tight block mb-3">wandor</span>
+                  <p className="text-slate-400 text-xs leading-relaxed max-w-[280px]">
+                    Simple, practical travel planning. Build trips around the places, food, and experiences you actually enjoy.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white uppercase tracking-wider mb-3">Explore</h4>
+                  <ul className="space-y-2">
+                    <li><button onClick={() => setActiveTab('destinations')} className="hover:text-amber-300 transition-colors">Destinations</button></li>
+                    <li><button onClick={() => setActiveTab('home')} className="hover:text-amber-300 transition-colors">Popular Spots</button></li>
+                    <li><button onClick={() => setActiveTab('why')} className="hover:text-amber-300 transition-colors">Travel Ideas</button></li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white uppercase tracking-wider mb-3">Company</h4>
+                  <ul className="space-y-2">
+                    <li><button onClick={() => setActiveTab('why')} className="hover:text-amber-300 transition-colors">About</button></li>
+                    <li><a href="#" className="hover:text-amber-300 transition-colors">Contact</a></li>
+                    <li><a href="#" className="hover:text-amber-300 transition-colors">Careers</a></li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-white uppercase tracking-wider mb-3">Socials</h4>
+                  <ul className="space-y-2">
+                    <li><a href="#" className="hover:text-amber-300 transition-colors">Instagram</a></li>
+                    <li><a href="#" className="hover:text-amber-300 transition-colors">TikTok</a></li>
+                    <li><a href="#" className="hover:text-amber-300 transition-colors">X (Twitter)</a></li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="max-w-[1100px] mx-auto pt-6 border-t border-white/5 flex flex-wrap items-center justify-between gap-4">
+                <p>© 2026 Wandor Travel Technologies Inc. All rights reserved.</p>
+                <div className="flex gap-6">
+                  <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+                  <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+                </div>
+              </div>
+            </footer>
+
+          </div>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
